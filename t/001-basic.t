@@ -7,6 +7,13 @@ use builtin      qw[ blessed refaddr   ];
 use Data::Dumper;
 use Test::More;
 
+## ------------------------------------------------------------------
+## Actors
+## ------------------------------------------------------------------
+## This defines the base Actor interface and the Props which is
+## basically a simple Actor factory.
+## ------------------------------------------------------------------
+
 class Props {
     field $class :param;
     field $args  :param = undef;
@@ -15,6 +22,16 @@ class Props {
         return $class->new( $args ? %$args : () )
     }
 }
+
+class Actor {
+    method receive;
+}
+
+## ------------------------------------------------------------------
+## Mailbox & Message
+## ------------------------------------------------------------------
+## Message definition and Mailbox to hold/distribute messages
+## ------------------------------------------------------------------
 
 class Message {
     field $to   :param;
@@ -27,156 +44,167 @@ class Message {
 }
 
 class Mailbox {
+    field $actor_ref :param;
+
+    field $actor;
     field @messages;
 
-    method messages { @messages }
+    ADJUST {
+        $actor = $actor_ref->context->props->new_actor;
+    }
 
+    method all_messages    {           @messages }
     method has_messages    { !! scalar @messages }
-    method dequeue_message {     shift @messages }
     method enqueue_message ($message) {
         push @messages => $message;
     }
-}
 
-class Scheduler {
-    field %activations;
-    field %scheduled;
-
-    method enqueue_message ($message) {
-        if ( my $activation = $activations{ $message->to } ) {
-            $activation->context
-                       ->mailbox
-                       ->enqueue_message( $message );
-            $scheduled{ $activation }++;
+    method tick {
+        while (@messages) {
+            $actor->receive($actor_ref->context, shift @messages);
         }
     }
+}
 
-    method spawn_activation ($props, $parent) {
-        my $activation = Activation->new(
-            props  => $props,
-            parent => $parent,
-        );
+## ------------------------------------------------------------------
+## Dispatcher
+## ------------------------------------------------------------------
+## Manages mailboxes and dispatching of messages
+## ------------------------------------------------------------------
 
-        $activations{ $activation } = $activation;
+class Dispatcher {
+    field %mailbox_by_actor_ref;
+    field %to_be_run;
 
-        $activation->START(
-            Context->new(
-                activation => $activation,
-                scheduler  => $self,
-                mailbox    => Mailbox->new,
+    method attach ($actor_ref) {
+        $mailbox_by_actor_ref{ $actor_ref } = Mailbox->new( actor_ref => $actor_ref );
+    }
+
+    method detach ($actor_ref) {
+        delete $mailbox_by_actor_ref{ $actor_ref };
+    }
+
+    method dispatch ($message) {
+        my $receiver = $message->to;
+        $mailbox_by_actor_ref{ $receiver }->enqueue_message( $message );
+        $to_be_run{ $receiver }++;
+    }
+
+    method tick {
+        map { $_->tick }
+        map { $mailbox_by_actor_ref{$_} }
+        keys %to_be_run;
+
+        %to_be_run = ();
+    }
+}
+
+## ------------------------------------------------------------------
+## Actor System
+## ------------------------------------------------------------------
+
+# TODO:
+# - Scheduler   ... for timers & intervals
+
+class System {
+    field $dispatcher;
+
+    ADJUST {
+        $dispatcher = Dispatcher->new;
+    }
+
+    method dispatch_message ($message) {
+        $dispatcher->dispatch( $message );
+    }
+
+    method spawn_actor ($props) {
+        my $actor_ref = ActorRef->new(
+            context => Context->new(
+                props  => $props,
+                system => $self,
             )
         );
 
-        return $activation;
+        $dispatcher->attach( $actor_ref );
+        return $actor_ref;
     }
 
-    method TICK {
-        foreach my $activation (map $activations{ $_ }, keys %scheduled) {
-            $activation->RUN;
-            $scheduled{ $activation }--;
-        }
+    method tick {
+        $dispatcher->tick;
     }
+
 }
+
+## ------------------------------------------------------------------
+## Actor Context
+## ------------------------------------------------------------------
 
 class Context {
-    field $activation :param;
-    field $scheduler  :param;
-    field $mailbox    :param;
-
-    field $current_message;
-
-    method self    { $activation }
-    method mailbox { $mailbox    }
-
-    # scheduler ...
-
-    method send ($to, $body, $from=undef) {
-        $scheduler->enqueue_message(
-            Message->new( to => $to, from => $from, body => $body )
-        );
-    }
-
-    method spawn ($props, $parent=undef) {
-        return $scheduler->spawn_activation($props, $parent);
-    }
-
-    # mailbox ...
-
-    method has_messages { $mailbox->has_messages }
-    method next_message {
-        $current_message = $mailbox->dequeue_message;
-        return $current_message;
-    }
-
-    method has_current_message { !! $current_message }
-    method current_message     {    $current_message }
-}
-
-class Activation {
     field $props  :param;
-    field $parent :param = undef;
+    field $system :param;
+
+    field $actor_ref;
     field @children;
 
-    field $context;
-    field $actor;
+    method props  { $props  }
+    method system { $system }
 
-    method START ($ctx) {
-        $context = $ctx;
-        $actor   = $props->new_actor;
-    }
+    method self               { $actor_ref }
+    method assign_self ($ref) { $actor_ref = $ref }
 
-    method RUN {
-        while ($context->has_messages) {
-            $actor->receive($self, $context->next_message);
-        }
-    }
-
-    method STOP {
-        $context = undef;
-        $actor   = undef;
-    }
-
-    method is_started {     defined $context &&     defined $actor }
-    method is_stopped { not defined $context && not defined $actor }
-
-    method context  { $context  }
-    method id       { refaddr $self }
-    method parent   { $parent   }
-    method children { @children }
-
-    method is_root      { not defined $parent }
+    method all_children {           @children }
     method has_children { !! scalar @children }
 
-    method spawn_child ($props) {
-        $context // die 'Cannot spawn a child on a stopped actor';
-        my $child = $context->spawn($props, $self);
+    # ...
+
+    method spawn ($props) {
+        my $child = $system->spawn_actor($props);
         push @children => $child;
         return $child;
     }
 
-    method send ($body, $from=undef) {
-        $context // die 'Cannot send a message to a stopped actor';
-        $context->send( $self, $body, $from );
+    method send ($message) {
+        $system->dispatch_message($message);
     }
 }
 
-class Hello {
-    method receive ($this, $message) {
-        say $this->context->has_messages ? '...' : 'last message';
+## ------------------------------------------------------------------
+## Actor ActorRef
+## ------------------------------------------------------------------
+
+class ActorRef {
+    field $context :param;
+
+    ADJUST {
+        $context->assign_self($self);
+    }
+
+    method pid     { refaddr $self }
+    method context { $context      }
+
+    method send ($body, $from=undef) {
+        $context->send(Message->new( to => $self, from => $from, body => $body ));
+    }
+}
+
+## ------------------------------------------------------------------
+
+class Hello :isa(Actor) {
+    method receive ($ctx, $message) {
         say "Hello ".$message->body;
     }
 }
 
-my $scheduler = Scheduler->new;
+my $system    = System->new;
 my $props     = Props->new( class => 'Hello' );
-my $activation = $scheduler->spawn_activation($props, undef);
+my $actor_ref = $system->spawn_actor($props);
 
-$activation->send("World $_") foreach 0 .. 5;
+$actor_ref->send("World $_") foreach 0 .. 5;
 diag "TICK";
-$scheduler->TICK;
+$system->tick;
 
-$activation->send("World $_") foreach 6 .. 10;
+$actor_ref->send("World $_") foreach 6 .. 10;
 diag "TICK";
-$scheduler->TICK;
+$system->tick;
 
 done_testing;

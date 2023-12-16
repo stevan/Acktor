@@ -28,7 +28,7 @@ class Acktor::Context {
     }
 
     method send ($message) {
-        $system->dispatch_message($message);
+        $system->dispatch($message);
     }
 }
 

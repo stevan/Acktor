@@ -4,17 +4,26 @@ use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr   ];
 
 use Acktor::Mailbox;
+use Acktor::Ref;
+use Acktor::Context;
 
 class Acktor::Dispatcher {
+    field $system :param;
+
     field %mailbox_by_actor_ref;
     field %to_be_run;
 
-    method attach ($actor_ref) {
-        $mailbox_by_actor_ref{ $actor_ref } = Acktor::Mailbox->new( actor_ref => $actor_ref );
-    }
+    method spawn_actor ($props) {
+        my $actor_ref = Acktor::Ref->new(
+            context => Acktor::Context->new(
+                props  => $props,
+                system => $self,
+            )
+        );
 
-    method detach ($actor_ref) {
-        delete $mailbox_by_actor_ref{ $actor_ref };
+        $mailbox_by_actor_ref{ $actor_ref } = Acktor::Mailbox->new( actor_ref => $actor_ref );
+
+        return $actor_ref;
     }
 
     method dispatch ($message) {

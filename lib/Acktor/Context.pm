@@ -22,12 +22,14 @@ class Acktor::Context {
     # ...
 
     method spawn ($props) {
+        say "$self spawn $props" if $ENV{DEBUG};
         my $child = $system->spawn_actor($props);
         push @children => $child;
         return $child;
     }
 
     method send ($message) {
+        say "$self send $message" if $ENV{DEBUG};
         $system->dispatch($message);
     }
 }

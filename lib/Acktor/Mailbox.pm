@@ -20,6 +20,7 @@ class Acktor::Mailbox {
     }
 
     method tick {
+        say "$self tick" if $ENV{DEBUG};
         while (@messages) {
             $actor->receive($actor_ref->context, shift @messages);
         }

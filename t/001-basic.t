@@ -11,24 +11,28 @@ use Acktor;
 use Acktor::System;
 use Acktor::Props;
 
-## ------------------------------------------------------------------
-
 class Hello :isa(Acktor) {
     method receive ($ctx, $message) {
-        say "Hello ".$message->body;
+        say ">> Hello ".$message->body;
     }
 }
 
-my $system    = Acktor::System->new;
-my $props     = Acktor::Props->new( class => 'Hello' );
-my $actor_ref = $system->spawn_actor($props);
+sub init ($ctx) {
+    say ">> runnning init";
+    my $hello = $ctx->spawn(Acktor::Props->new( class => 'Hello' ));
+    say ">> got actor Hello($hello)";
+    foreach (0 .. 5) {
+        $hello->send("World $_");
+        say ">> sent Hello($hello) $_ message(s) ";
+    }
+}
 
-$actor_ref->send("World $_") foreach 0 .. 5;
-diag "TICK";
-$system->tick;
+my $system = Acktor::System->new( init => \&init );
 
-$actor_ref->send("World $_") foreach 6 .. 10;
-diag "TICK";
-$system->tick;
+for (0 .. 10) {
+    diag "-- TICK($_)";
+    $system->tick;
+}
+
 
 done_testing;

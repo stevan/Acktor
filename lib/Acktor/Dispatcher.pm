@@ -16,8 +16,8 @@ class Acktor::Dispatcher {
         say "$self spawn_actor $props" if $ENV{DEBUG};
         my $actor_ref = Acktor::Ref->new(
             context => Acktor::Context->new(
-                props  => $props,
-                system => $self,
+                props      => $props,
+                dispatcher => $self,
             )
         );
 

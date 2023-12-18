@@ -6,14 +6,7 @@ use builtin      qw[ blessed refaddr   ];
 use Acktor::Dispatcher;
 use Acktor::Props;
 use Acktor::Message;
-
-class Acktor::System::Init :isa(Acktor) {
-    field $init :param;
-
-    method receive($ctx, $message) {
-        $init->($ctx);
-    }
-}
+use Acktor::System::Init;
 
 class Acktor::System {
     field $init :param;

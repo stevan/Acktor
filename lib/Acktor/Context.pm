@@ -4,6 +4,8 @@ use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr   ];
 
 class Acktor::Context {
+    use Acktor::Logging;
+
     field $props      :param;
     field $dispatcher :param;
 
@@ -22,14 +24,14 @@ class Acktor::Context {
     # ...
 
     method spawn ($props) {
-        say "$self spawn $props" if $ENV{DEBUG};
+        logger->log( DEBUG, "spawn( $props )" ) if DEBUG;
         my $child = $dispatcher->spawn_actor($props);
         push @children => $child;
         return $child;
     }
 
     method send ($message) {
-        say "$self send $message" if $ENV{DEBUG};
+        logger->log( DEBUG, "send( $message )" ) if DEBUG;
         $dispatcher->dispatch($message);
     }
 }

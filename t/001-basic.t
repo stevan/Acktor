@@ -10,20 +10,23 @@ use Test::More;
 use Acktor;
 use Acktor::System;
 use Acktor::Props;
+use Acktor::Logging;
 
 class Hello :isa(Acktor) {
+    use Acktor::Logging;
+
     method receive ($ctx, $message) {
-        say ">> Hello ".$message->body;
+        logger->log( INFO, ">> Hello ".$message->body ) if INFO;
     }
 }
 
 sub init ($ctx) {
-    say ">> runnning init";
+    logger->log( INFO, ">> runnning init" ) if INFO;
     my $hello = $ctx->spawn(Acktor::Props->new( class => 'Hello' ));
-    say ">> got actor Hello($hello)";
+    logger->log( INFO, ">> got actor Hello($hello)" ) if INFO;
     foreach (0 .. 5) {
         $hello->send("World $_");
-        say ">> sent Hello($hello) $_ message(s) ";
+        logger->log( INFO, ">> sent Hello($hello) $_ message(s)" ) if INFO;
     }
 }
 

@@ -8,12 +8,12 @@ use Acktor::Ref;
 use Acktor::Context;
 
 class Acktor::Dispatcher {
+    use Acktor::Logging;
 
     field %mailbox_by_actor_ref;
     field %to_be_run;
 
     method spawn_actor ($props) {
-        say "$self spawn_actor $props" if $ENV{DEBUG};
         my $actor_ref = Acktor::Ref->new(
             context => Acktor::Context->new(
                 props      => $props,
@@ -21,25 +21,25 @@ class Acktor::Dispatcher {
             )
         );
 
-        $mailbox_by_actor_ref{ $actor_ref } = Acktor::Mailbox->new( actor_ref => $actor_ref );
+        $mailbox_by_actor_ref{ $actor_ref->pid } = Acktor::Mailbox->new( actor_ref => $actor_ref );
 
-        say "... new_actor_ref $actor_ref" if $ENV{DEBUG};
+        logger->log( DEBUG, "spawn_actor( $props ) => $actor_ref" ) if DEBUG;
 
         return $actor_ref;
     }
 
     method dispatch ($message) {
-        say "$self dispatch $message to ".$message->to if $ENV{DEBUG};
+        logger->log( DEBUG, "dispatch( $message )" ) if DEBUG;
         my $receiver = $message->to;
-        $mailbox_by_actor_ref{ $receiver }->enqueue_message( $message );
-        $to_be_run{ $receiver }++;
+        $mailbox_by_actor_ref{ $receiver->pid }->enqueue_message( $message );
+        $to_be_run{ $receiver->pid }++;
     }
 
     method tick {
         my %to_run = %to_be_run;
         %to_be_run = ();
 
-        say "$self tick -> running(" . (join ', ' => keys %to_run) . ")" if $ENV{DEBUG};
+        logger->log( DEBUG, scalar keys %to_run ? "tick =>> running( " . (join ', ' => keys %to_run) . " )" : "tick ... nothing to run" ) if DEBUG;
         map { $_->tick }
         map { $mailbox_by_actor_ref{$_} }
         keys %to_run;

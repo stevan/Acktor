@@ -4,6 +4,8 @@ use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr   ];
 
 class Acktor::Mailbox {
+    use Acktor::Logging;
+
     field $actor_ref :param;
 
     field $actor;
@@ -20,7 +22,7 @@ class Acktor::Mailbox {
     }
 
     method tick {
-        say "$self tick" if $ENV{DEBUG};
+        logger->log( DEBUG, "tick" ) if DEBUG;
         while (@messages) {
             $actor->receive($actor_ref->context, shift @messages);
         }

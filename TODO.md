@@ -1,8 +1,5 @@
 # TODO
 
-- spawn is a message (from parent to child)
-    - https://doc.akka.io/docs/akka/current/general/message-delivery-reliability.html
-
 - DebugLogger
     - for the internals
 

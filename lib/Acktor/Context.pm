@@ -34,6 +34,7 @@ class Acktor::Context {
         logger->log( DEBUG, "send( $message )" ) if DEBUG;
         $dispatcher->dispatch($message);
     }
+
 }
 
 __END__

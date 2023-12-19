@@ -11,13 +11,10 @@ class Acktor::Ref {
     use if LOG_LEVEL, 'overload' => '""' => \&to_string;
 
     field $context :param;
-
-    field $pid;
+    field $pid     :param;
 
     ADJUST {
         $context->assign_self($self);
-
-        $pid = sprintf '%d:%s' => refaddr $self, $context->props->class;
     }
 
     method pid     { $pid     }

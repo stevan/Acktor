@@ -1,5 +1,7 @@
 package Acktor::Logging;
 use v5.38;
+use experimental qw[ class builtin try ];
+use builtin      qw[ blessed refaddr   ];
 
 use constant LOG_LEVEL => $ENV{ACKTOR_DEBUG} ? 4 : ($ENV{ACKTOR_LOG} // 0);
 
@@ -23,9 +25,12 @@ our @EXPORT = qw[
 
 use Acktor::Logging::Logger;
 
-sub logger () {
-    state $logger //= Acktor::Logging::Logger->new;
-}
+sub logger ($ctx=undef) {
+    state $default = Acktor::Logging::Logger->new;
+    state %to_ctx;
 
+    return $default unless $ctx;
+    return $to_ctx{ refaddr $ctx } //= Acktor::Logging::Logger->new( target => $ctx->self->pid );
+}
 
 __END__

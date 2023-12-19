@@ -13,8 +13,15 @@ class Acktor::Dispatcher {
     field %mailbox_by_actor_ref;
     field %to_be_run;
 
+    our $PID_SEQ = 0;
+
+    my sub new_pid ($props) {
+        sprintf '%04d:%s' => ++$PID_SEQ, $props->class
+    }
+
     method spawn_actor ($props) {
         my $actor_ref = Acktor::Ref->new(
+            pid     => new_pid($props),
             context => Acktor::Context->new(
                 props      => $props,
                 dispatcher => $self,

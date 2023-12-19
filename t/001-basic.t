@@ -16,17 +16,17 @@ class Hello :isa(Acktor) {
     use Acktor::Logging;
 
     method receive ($ctx, $message) {
-        logger->log( INFO, ">> Hello ".$message->body ) if INFO;
+        logger($ctx)->log( INFO, ">> Hello ".$message->body ) if INFO;
     }
 }
 
 sub init ($ctx) {
-    logger->log( INFO, ">> runnning init" ) if INFO;
+    logger($ctx)->log( INFO, ">> runnning init" ) if INFO;
     my $hello = $ctx->spawn(Acktor::Props->new( class => 'Hello' ));
-    logger->log( INFO, ">> got actor Hello($hello)" ) if INFO;
+    logger($ctx)->log( INFO, ">> got actor Hello($hello)" ) if INFO;
     foreach (0 .. 5) {
         $hello->send("World $_");
-        logger->log( INFO, ">> sent Hello($hello) $_ message(s)" ) if INFO;
+        logger($ctx)->log( INFO, ">> sent Hello($hello) $_ message(s)" ) if INFO;
     }
 }
 

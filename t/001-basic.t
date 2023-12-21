@@ -32,10 +32,6 @@ sub init ($ctx) {
 
 my $system = Acktor::System->new( init => \&init );
 
-for (0 .. 10) {
-    diag "-- TICK($_)";
-    $system->tick;
-}
-
+$system->loop( max_ticks => 4 );
 
 done_testing;

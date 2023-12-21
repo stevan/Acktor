@@ -10,8 +10,9 @@ use Acktor::Context;
 class Acktor::Dispatcher {
     use Acktor::Logging;
 
-    field %mailbox_by_actor_ref;
-    field %to_be_run;
+    field $scheduler :param;
+
+    field %pid_to_mailbox;
 
     our $PID_SEQ = 0;
 
@@ -28,7 +29,7 @@ class Acktor::Dispatcher {
             )
         );
 
-        $mailbox_by_actor_ref{ $actor_ref->pid } = Acktor::Mailbox->new( actor_ref => $actor_ref );
+        $pid_to_mailbox{ $actor_ref->pid } = Acktor::Mailbox->new( actor_ref => $actor_ref );
 
         logger->log( DEBUG, "spawn_actor( $props ) => $actor_ref" ) if DEBUG;
 
@@ -37,19 +38,17 @@ class Acktor::Dispatcher {
 
     method dispatch ($message) {
         logger->log( DEBUG, "dispatch( $message )" ) if DEBUG;
-        my $receiver = $message->to;
-        $mailbox_by_actor_ref{ $receiver->pid }->enqueue_message( $message );
-        $to_be_run{ $receiver->pid }++;
+        my $mailbox = $pid_to_mailbox{ $message->to->pid };
+        $mailbox->enqueue_message( $message );
+        $scheduler->schedule( $mailbox );
     }
 
     method tick {
-        my %to_run = %to_be_run;
-        %to_be_run = ();
+        $scheduler->tick;
+    }
 
-        logger->log( DEBUG, scalar keys %to_run ? "tick =>> running( " . (join ', ' => keys %to_run) . " )" : "tick ... nothing to run" ) if DEBUG;
-        map { $_->tick }
-        map { $mailbox_by_actor_ref{$_} }
-        keys %to_run;
+    method loop (%options) {
+        $scheduler->loop(%options);
     }
 }
 

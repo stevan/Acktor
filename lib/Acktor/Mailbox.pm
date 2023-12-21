@@ -15,6 +15,8 @@ class Acktor::Mailbox {
         $actor = $actor_ref->context->props->new_actor;
     }
 
+    method owner { $actor_ref }
+
     method all_messages    {           @messages }
     method has_messages    { !! scalar @messages }
     method enqueue_message ($message) {

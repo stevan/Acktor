@@ -29,10 +29,6 @@ class Acktor::Ref {
         $_to_str //= sprintf 'Ref[ %s ]' => $pid;
     }
 
-    # packing for transport
-    method pack {
-        +{ ref => $pid }
-    }
 }
 
 __END__

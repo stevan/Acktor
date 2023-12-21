@@ -43,6 +43,16 @@ class Acktor::Logging::Logger {
         $self->write($self->format_message($target // (caller)[0], $level, @msg));
     }
 
+    method line ($label) {
+        my $width = ($TERM_WIDTH - ((length $label) + 2 + 2));
+        $fh->print(
+            "\e[38;2;125;125;125;m",
+            '-- ', $label, ' ', ('-' x $width),
+            "\e[0m",
+            "\n"
+        );
+    }
+
 }
 
 __END__

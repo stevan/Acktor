@@ -28,6 +28,8 @@ class Acktor::Scheduler {
     }
 
     method loop (%options) {
+        logger->line( "init" ) if DEBUG;
+
         my $tick = 0;
         while (1) {
             $tick++;
@@ -37,6 +39,8 @@ class Acktor::Scheduler {
 
             last if $options{max_ticks} && $options{max_ticks} <= $tick;
         }
+
+        logger->line( "exit" ) if DEBUG;
     }
 }
 

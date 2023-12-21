@@ -44,10 +44,12 @@ class Acktor::Dispatcher {
     }
 
     method tick {
+        logger->log( DEBUG, "tick" ) if DEBUG;
         $scheduler->tick;
     }
 
     method loop (%options) {
+        logger->log( DEBUG, "loop" ) if DEBUG;
         $scheduler->loop(%options);
     }
 }

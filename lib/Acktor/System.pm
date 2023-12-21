@@ -41,6 +41,7 @@ class Acktor::System {
     }
 
     method loop (%options) {
+        logger->log( DEBUG, "loop" ) if DEBUG;
         $dispatcher->loop(%options);
     }
 }

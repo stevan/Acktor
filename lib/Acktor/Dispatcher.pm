@@ -3,20 +3,28 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr   ];
 
+use Acktor::Scheduler;
 use Acktor::Mailbox;
 use Acktor::Ref;
 use Acktor::Context;
+use Acktor::Props;
+
+use Acktor::System::Init;
 
 class Acktor::Dispatcher {
     use Acktor::Logging;
 
-    field $scheduler :param;
+    field $scheduler;
+    field $init_ref;
 
     field %pid_to_mailbox;
 
-    our $PID_SEQ = 0;
+    ADJUST {
+        $scheduler = Acktor::Scheduler->new
+    }
 
     my sub new_pid ($props) {
+        state $PID_SEQ = 0;
         sprintf '%04d:%s' => ++$PID_SEQ, $props->class
     }
 
@@ -43,14 +51,20 @@ class Acktor::Dispatcher {
         $scheduler->schedule( $mailbox );
     }
 
-    method tick {
-        logger->log( DEBUG, "tick" ) if DEBUG;
-        $scheduler->tick;
-    }
-
     method loop (%options) {
-        logger->log( DEBUG, "loop" ) if DEBUG;
+        logger->line( "dispatcher::loop" ) if DEBUG;
+
+        $init_ref = $self->spawn_actor( Acktor::Props->new( class => 'Acktor::System::Init' ) );
+
+        if (my $init = delete $options{init}) {
+            $scheduler->next_tick(sub { $init->( $init_ref->context ) });
+        }
+
         $scheduler->loop(%options);
+
+        # TODO: despawn $init_ref
+
+        logger->line( "dispatcher::exit" ) if DEBUG;
     }
 }
 

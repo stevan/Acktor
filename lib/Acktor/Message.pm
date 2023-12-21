@@ -9,7 +9,7 @@ class Acktor::Message {
     use if LOG_LEVEL, 'overload' => '""' => \&to_string;
 
     field $to   :param;
-    field $from :param;
+    field $from :param = undef;
     field $body :param;
 
     method to   { $to   }

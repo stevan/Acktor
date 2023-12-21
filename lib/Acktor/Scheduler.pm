@@ -6,41 +6,50 @@ use builtin      qw[ blessed refaddr   ];
 class Acktor::Scheduler {
     use Acktor::Logging;
 
+    field @to_be_run;
     field %to_be_run;
 
     method schedule ($mailbox) {
         $to_be_run{ refaddr $mailbox } = $mailbox;
     }
 
+    method next_tick ($f) { push @to_be_run => $f }
+
     method tick {
-        unless ( keys %to_be_run ) {
+        if ( scalar @to_be_run == 0 && scalar keys %to_be_run == 0 ) {
             logger->log( DEBUG, 'tick =>> nothing to run' ) if DEBUG;
             return;
         }
+
+        my @to_run = @to_be_run;
+        @to_be_run = ();
 
         my %to_run = %to_be_run;
         %to_be_run = ();
 
         logger->log( DEBUG, "tick =>> running( ".
-                            (join ', ' => map $_->owner->to_string, values %to_run).
+                            (join ', ' => (map "$_",                        @to_run),
+                                          (map $_->owner->to_string, values %to_run)).
                             " )" ) if DEBUG;
-        map { $_->tick } values %to_run;
+
+        map $_->(),          @to_run;
+        map $_->tick, values %to_run;
     }
 
     method loop (%options) {
-        logger->line( "init" ) if DEBUG;
+        logger->line( "scheduler::init" ) if DEBUG;
 
         my $tick = 0;
         while (1) {
             $tick++;
-            logger->line( "tick($tick)" ) if DEBUG;
+            logger->line( "scheduler::tick($tick)" ) if DEBUG;
 
             $self->tick;
 
             last if $options{max_ticks} && $options{max_ticks} <= $tick;
         }
 
-        logger->line( "exit" ) if DEBUG;
+        logger->line( "scheduler::exit" ) if DEBUG;
     }
 }
 

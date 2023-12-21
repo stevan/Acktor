@@ -30,8 +30,11 @@ sub init ($ctx) {
     }
 }
 
-my $system = Acktor::System->new( init => \&init );
+my $system = Acktor::System->new;
 
-$system->loop( max_ticks => 4 );
+$system->loop(
+    init      => \&init,
+    max_ticks => 4
+);
 
 done_testing;

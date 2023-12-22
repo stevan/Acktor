@@ -54,3 +54,15 @@ class Acktor::Scheduler {
 }
 
 __END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Acktor::Scheduler
+
+=head1 DESCRIPTION
+
+=cut

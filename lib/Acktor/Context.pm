@@ -38,3 +38,15 @@ class Acktor::Context {
 }
 
 __END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Acktor::Context
+
+=head1 DESCRIPTION
+
+=cut

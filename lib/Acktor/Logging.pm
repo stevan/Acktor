@@ -35,3 +35,15 @@ sub logger ($ctx=undef) {
 }
 
 __END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Acktor::Logging
+
+=head1 DESCRIPTION
+
+=cut

@@ -23,3 +23,15 @@ class Acktor::Message {
 }
 
 __END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Acktor::Message
+
+=head1 DESCRIPTION
+
+=cut

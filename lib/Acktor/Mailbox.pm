@@ -33,3 +33,15 @@ class Acktor::Mailbox {
 
 
 __END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Acktor::Mailbox
+
+=head1 DESCRIPTION
+
+=cut

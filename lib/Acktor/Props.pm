@@ -24,3 +24,15 @@ class Acktor::Props {
 }
 
 __END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Acktor::Props
+
+=head1 DESCRIPTION
+
+=cut

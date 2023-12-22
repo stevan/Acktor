@@ -32,3 +32,15 @@ class Acktor::Ref {
 }
 
 __END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Acktor::Ref
+
+=head1 DESCRIPTION
+
+=cut

@@ -7,3 +7,15 @@ class Acktor {
 }
 
 __END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Acktor
+
+=head1 DESCRIPTION
+
+=cut

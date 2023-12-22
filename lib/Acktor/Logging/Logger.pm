@@ -57,3 +57,14 @@ class Acktor::Logging::Logger {
 
 __END__
 
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Acktor::Logging::Logger
+
+=head1 DESCRIPTION
+
+=cut

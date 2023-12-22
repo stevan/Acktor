@@ -69,3 +69,15 @@ class Acktor::Dispatcher {
 }
 
 __END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Acktor::Dispatcher
+
+=head1 DESCRIPTION
+
+=cut

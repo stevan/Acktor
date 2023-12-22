@@ -23,6 +23,12 @@ class Acktor::Mailbox {
         push @messages => $message;
     }
 
+    method drain_messages {
+        my @msgs  = @messages;
+        @messages = ();
+        return @msgs;
+    }
+
     method tick {
         logger->log( DEBUG, "tick" ) if DEBUG;
         while (@messages) {

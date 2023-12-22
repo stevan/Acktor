@@ -5,6 +5,7 @@ use builtin      qw[ blessed refaddr   ];
 
 use Acktor::Scheduler;
 use Acktor::Mailbox;
+use Acktor::Mailbox::Remote;
 use Acktor::Ref;
 use Acktor::Context;
 use Acktor::Props;
@@ -13,6 +14,8 @@ use Acktor::System::Init;
 
 class Acktor::Dispatcher {
     use Acktor::Logging;
+
+    field $post_office :param;
 
     field $scheduler;
     field $init_ref;
@@ -28,14 +31,31 @@ class Acktor::Dispatcher {
         sprintf '%04d:%s' => ++$PID_SEQ, $props->class
     }
 
-    method spawn_actor ($props) {
-        my $actor_ref = Acktor::Ref->new(
+    method _build_actor_ref ($props) {
+        return Acktor::Ref->new(
             pid     => new_pid($props),
             context => Acktor::Context->new(
                 props      => $props,
                 dispatcher => $self,
             )
         );
+    }
+
+    method spawn_remote_actor ($props) {
+        my $actor_ref = $self->_build_actor_ref($props);
+
+        $pid_to_mailbox{ $actor_ref->pid } = Acktor::Mailbox::Remote->new(
+            actor_ref   => $actor_ref,
+            post_office => $post_office,
+        );
+
+        logger->log( DEBUG, "spawn_remote_actor( $props ) => $actor_ref" ) if DEBUG;
+
+        return $actor_ref;
+    }
+
+    method spawn_actor ($props) {
+        my $actor_ref = $self->_build_actor_ref($props);
 
         $pid_to_mailbox{ $actor_ref->pid } = Acktor::Mailbox->new( actor_ref => $actor_ref );
 

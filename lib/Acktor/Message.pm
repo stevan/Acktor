@@ -20,6 +20,11 @@ class Acktor::Message {
     method to_string {
         $_to_str //= sprintf 'Msg[ %s, %s, %s ]' => $to->pid, ($from ? $from->pid : '_'), $body;
     }
+
+    field $_packed;
+    method pack {
+        $_packed //= { to => $to->pid, ($from ? (from => $from->pid) : ()), body => $body };
+    }
 }
 
 __END__

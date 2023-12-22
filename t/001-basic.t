@@ -15,14 +15,20 @@ use Acktor::Logging;
 class Hello :isa(Acktor) {
     use Acktor::Logging;
 
+    field $remote :param = undef;
+
     method receive ($ctx, $message) {
         logger($ctx)->log( INFO, ">> Hello ".$message->body ) if INFO;
+        $remote->send( "FORWARD => ".$message->body ) if $remote;
     }
 }
 
 sub init ($ctx) {
+
+    my $remote = $ctx->dispatcher->spawn_remote_actor(Acktor::Props->new( class => 'Hello' ) );
+
     logger($ctx)->log( INFO, ">> runnning init" ) if INFO;
-    my $hello = $ctx->spawn(Acktor::Props->new( class => 'Hello' ));
+    my $hello = $ctx->spawn(Acktor::Props->new( class => 'Hello', args => { remote => $remote } ));
     logger($ctx)->log( INFO, ">> got actor Hello($hello)" ) if INFO;
     foreach (0 .. 5) {
         $hello->send("World $_");

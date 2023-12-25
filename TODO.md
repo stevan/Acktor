@@ -26,3 +26,27 @@
     - this could be fun
     - or this could be bad
     - and is this useful??
+
+
+## Dependency Diagram
+
+```
+System
+    PostOffice
+    Dispatcher
+        %PID-MAILBOX
+            MailBox
+                <Actor>
+                Ref
+                    Context
+                        Props
+                        >Dispatcher
+                        >Mailbox
+                        >Ref
+                        >>(parent/children)
+        >PostOffice
+        Scheduler
+            @Functions
+            @Mailboxes
+
+```

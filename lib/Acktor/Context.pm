@@ -41,7 +41,7 @@ class Acktor::Context {
 
     method spawn ($props) {
         logger->log( DEBUG, "spawn( $props )" ) if DEBUG;
-        my $child_ref = $dispatcher->spawn_actor($props, $self);
+        my $child_ref = $dispatcher->spawn_actor($props, parent => $self);
         push @children => $child_ref;
         $child_ref->context->start;
         return $child_ref;

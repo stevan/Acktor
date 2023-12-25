@@ -23,7 +23,7 @@ class Acktor::Dispatcher {
     field %pid_to_mailbox;
 
     ADJUST {
-        $scheduler = Acktor::Scheduler->new
+        $scheduler = Acktor::Scheduler->new;
     }
 
     method init_ref { $init_ref }
@@ -33,7 +33,10 @@ class Acktor::Dispatcher {
         sprintf '%04d:%s' => ++$PID_SEQ, $props->class
     }
 
-    method _build_actor_ref ($props, $parent=undef) {
+    method _build_actor_ref ($props, %options) {
+
+        my $parent = $options{parent};
+
         return Acktor::Ref->new(
             pid     => new_pid($props),
             context => Acktor::Context->new(
@@ -57,8 +60,8 @@ class Acktor::Dispatcher {
         return $actor_ref;
     }
 
-    method spawn_actor ($props, $parent=undef) {
-        my $actor_ref = $self->_build_actor_ref($props, $parent);
+    method spawn_actor ($props, %options) {
+        my $actor_ref = $self->_build_actor_ref($props, %options);
 
         $pid_to_mailbox{ $actor_ref->pid } = Acktor::Mailbox->new( actor_ref => $actor_ref );
 
@@ -70,6 +73,7 @@ class Acktor::Dispatcher {
     method dispatch ($message) {
         logger->log( DEBUG, "dispatch( $message )" ) if DEBUG;
         my $mailbox = $pid_to_mailbox{ $message->to->pid };
+        # XXX - should we check here to see if the mailbox is started?
         $mailbox->enqueue_message( $message );
         $scheduler->schedule( $mailbox );
     }
@@ -89,6 +93,7 @@ class Acktor::Dispatcher {
 
         $scheduler->loop(%options);
 
+        # TODO: collect stats (zombies, etc)
         # TODO: despawn $init_ref
 
         logger->line( "dispatcher::exit" ) if DEBUG;

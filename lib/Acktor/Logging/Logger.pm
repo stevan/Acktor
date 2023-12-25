@@ -1,7 +1,7 @@
 
 use v5.38;
 use experimental qw[ class builtin try ];
-use builtin      qw[ blessed refaddr   ];
+use builtin      qw[ blessed refaddr true false ];
 
 class Acktor::Logging::Logger {
     use Term::ReadKey qw[ GetTerminalSize ];
@@ -26,15 +26,17 @@ class Acktor::Logging::Logger {
     field $target :param = undef;
 
     method format_message ($target, $level, @msg) {
-        join '' =>
-            $level_map{ $level },
-            (sprintf " \e[20m\e[97m\e[48;2;%d;%d;%d;m %s \e[0m " => (
-                @{ $target_to_color{ $target }
-                    //= [ map { (int(rand(20)) * 10) } 1,2,3 ] },
-                $target,
-            )),
-            $level_color_map{ $level }, @msg, "\e[0m",
-            "\n"
+        join '' => map {
+            join '' =>
+                $level_map{ $level },
+                (sprintf " \e[20m\e[97m\e[48;2;%d;%d;%d;m %s \e[0m " => (
+                    @{ $target_to_color{ $target }
+                        //= [ map { (int(rand(20)) * 10) } 1,2,3 ] },
+                    $target,
+                )),
+                $level_color_map{ $level }, $_, "\e[0m",
+                "\n"
+        } split /\n/ => "@msg";
     }
 
     method write ($msg) { $fh->print( $msg ) }

@@ -1,7 +1,7 @@
 
 use v5.38;
 use experimental qw[ class builtin try ];
-use builtin      qw[ blessed refaddr   ];
+use builtin      qw[ blessed refaddr true false ];
 
 class Acktor::Message {
     use Acktor::Logging;
@@ -18,7 +18,10 @@ class Acktor::Message {
 
     field $_to_str;
     method to_string {
-        $_to_str //= sprintf 'Msg[ %s, %s, %s ]' => $to->pid, ($from ? $from->pid : '_'), $body;
+        $_to_str //= sprintf 'Msg[ %s, %s, %s ]' =>
+            $to->pid,
+            ($from ? $from->pid : '_'),
+            ref $body ? $body : '"'.($body =~ s/\n/\\n/gr).'"';
     }
 
     field $_packed;

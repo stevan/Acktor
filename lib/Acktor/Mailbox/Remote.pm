@@ -1,12 +1,17 @@
 
 use v5.38;
 use experimental qw[ class builtin try ];
-use builtin      qw[ blessed refaddr   ];
+use builtin      qw[ blessed refaddr true false ];
 
 class Acktor::Mailbox::Remote :isa(Acktor::Mailbox) {
     use Acktor::Logging;
 
     field $post_office :param;
+
+    method is_started { 1 }
+    # No-ops (for now)
+    method start { () }
+    method stop  { () }
 
     method tick {
         logger->log( DEBUG, "tick ... posting messages to PostOffice" ) if DEBUG;

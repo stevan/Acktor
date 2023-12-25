@@ -1,7 +1,7 @@
 
 use v5.38;
 use experimental qw[ class builtin try ];
-use builtin      qw[ blessed refaddr   ];
+use builtin      qw[ blessed refaddr true false ];
 
 use Acktor::Scheduler;
 use Acktor::Mailbox;
@@ -26,17 +26,20 @@ class Acktor::Dispatcher {
         $scheduler = Acktor::Scheduler->new
     }
 
+    method init_ref { $init_ref }
+
     my sub new_pid ($props) {
         state $PID_SEQ = 0;
         sprintf '%04d:%s' => ++$PID_SEQ, $props->class
     }
 
-    method _build_actor_ref ($props) {
+    method _build_actor_ref ($props, $parent=undef) {
         return Acktor::Ref->new(
             pid     => new_pid($props),
             context => Acktor::Context->new(
                 props      => $props,
                 dispatcher => $self,
+                ($parent ? (parent  => $parent) :()),
             )
         );
     }
@@ -54,8 +57,8 @@ class Acktor::Dispatcher {
         return $actor_ref;
     }
 
-    method spawn_actor ($props) {
-        my $actor_ref = $self->_build_actor_ref($props);
+    method spawn_actor ($props, $parent=undef) {
+        my $actor_ref = $self->_build_actor_ref($props, $parent);
 
         $pid_to_mailbox{ $actor_ref->pid } = Acktor::Mailbox->new( actor_ref => $actor_ref );
 
@@ -77,7 +80,11 @@ class Acktor::Dispatcher {
         $init_ref = $self->spawn_actor( Acktor::Props->new( class => 'Acktor::System::Init' ) );
 
         if (my $init = delete $options{init}) {
-            $scheduler->next_tick(sub { $init->( $init_ref->context ) });
+            $scheduler->next_tick(sub {
+                # start all the mailboxes created prior to start
+                $_->start foreach values %pid_to_mailbox;
+                $init->( $init_ref->context );
+            });
         }
 
         $scheduler->loop(%options);

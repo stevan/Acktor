@@ -15,25 +15,29 @@ use Acktor::Logging;
 class Hello :isa(Acktor) {
     use Acktor::Logging;
 
-    field $remote :param = undef;
-
     method receive ($ctx, $message) {
         logger($ctx)->log( INFO, ">> Hello ".$message->body ) if INFO;
-        $remote->send( "FORWARD => ".$message->body ) if $remote;
+
+        my $remote = $ctx->lookup('RemoteHello') // die 'Unable to find RemoteHello actor';
+
+        $remote->send( "FORWARD => ".$message->body );
     }
 }
 
 sub init ($ctx) {
-
-    my $remote = $ctx->dispatcher->spawn_remote_actor(Acktor::Props->new( class => 'Hello' ) );
-
     logger($ctx)->log( INFO, ">> runnning init" ) if INFO;
-    my $hello = $ctx->spawn(Acktor::Props->new( class => 'Hello', args => { remote => $remote } ));
+
+    my $hello = $ctx->spawn(Acktor::Props->new( class => 'Hello' ));
     logger($ctx)->log( INFO, ">> got actor Hello($hello)" ) if INFO;
+
     foreach (0 .. 5) {
         $hello->send("World $_");
         logger($ctx)->log( INFO, ">> sent Hello($hello) $_ message(s)" ) if INFO;
     }
+
+    # we can do this last, because nothing will happen until next tick
+    my $remote = $ctx->dispatcher->spawn_remote_actor(Acktor::Props->new( class => 'Hello', alias => 'RemoteHello' ) );
+    logger($ctx)->log( INFO, ">> got remote actor RemoteHello($hello)" ) if INFO;
 }
 
 my $system = Acktor::System->new;

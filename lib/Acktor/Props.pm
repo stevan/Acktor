@@ -10,8 +10,10 @@ class Acktor::Props {
 
     field $class :param;
     field $args  :param = undef;
+    field $alias :param = undef;
 
     method class { $class }
+    method alias { $alias }
 
     method new_actor {
         return $class->new( $args ? %$args : () )

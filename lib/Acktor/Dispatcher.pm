@@ -18,15 +18,19 @@ class Acktor::Dispatcher {
     field $post_office :param;
 
     field $scheduler;
-    field $init_ref;
 
     field %pid_to_mailbox;
+    field %aliases;
 
     ADJUST {
         $scheduler = Acktor::Scheduler->new;
     }
 
-    method init_ref { $init_ref }
+    ## ----------------------------------------------------
+
+    method init_ref { $aliases{init} }
+
+    method lookup ($alias) { $aliases{ $alias } }
 
     ## ----------------------------------------------------
     ## Spawn
@@ -38,10 +42,7 @@ class Acktor::Dispatcher {
     }
 
     method _build_actor_ref ($props, %options) {
-
         my $parent = $options{parent};
-
-        # TODO: if props->alias, then add to %aliases
 
         return Acktor::Ref->new(
             pid     => new_pid($props),
@@ -64,6 +65,10 @@ class Acktor::Dispatcher {
             post_office => $post_office,
         );
 
+        if ( my $alias = $props->alias ) {
+            $aliases{ $alias } = $actor_ref;
+        }
+
         logger->log( DEBUG, "spawn_remote_actor( $props ) => $actor_ref" ) if DEBUG;
 
         return $actor_ref;
@@ -75,6 +80,10 @@ class Acktor::Dispatcher {
         # TODO: add try/catch to catch anything throwm by Mailbox::new
         $pid_to_mailbox{ $actor_ref->pid } = Acktor::Mailbox->new( actor_ref => $actor_ref );
 
+        if ( my $alias = $props->alias ) {
+            $aliases{ $alias } = $actor_ref;
+        }
+
         logger->log( DEBUG, "spawn_actor( $props ) => $actor_ref" ) if DEBUG;
 
         return $actor_ref;
@@ -85,6 +94,8 @@ class Acktor::Dispatcher {
         # TODO:
         # - remove mailbox
         #   - shut it down
+        # - check for alias
+        #   - remove it in a sensible way
 
     }
 
@@ -107,7 +118,9 @@ class Acktor::Dispatcher {
     method loop (%options) {
         logger->line( "dispatcher::loop" ) if DEBUG;
 
-        $init_ref = $self->spawn_actor( Acktor::Props->new( class => 'Acktor::System::Init' ) );
+        my $init_ref = $self->spawn_actor(
+            Acktor::Props->new( class => 'Acktor::System::Init', alias => 'init' )
+        );
 
         # TODO: spawn a sys/ actor which will handle system things
         #       - spawn DeadLetterQueue actor under here

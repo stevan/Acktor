@@ -27,6 +27,8 @@ class Acktor::Context {
 
     # ...
 
+    method lookup ($alias) { $dispatcher->lookup($alias) }
+
     method spawn ($props) {
         logger->log( DEBUG, "spawn( $props )" ) if DEBUG;
         my $child_ref = $dispatcher->spawn_actor($props, parent => $self);

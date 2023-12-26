@@ -28,6 +28,10 @@ class Acktor::Dispatcher {
 
     method init_ref { $init_ref }
 
+    ## ----------------------------------------------------
+    ## Spawn
+    ## ----------------------------------------------------
+
     my sub new_pid ($props) {
         state $PID_SEQ = 0;
         sprintf '%04d:%s' => ++$PID_SEQ, $props->class
@@ -47,9 +51,12 @@ class Acktor::Dispatcher {
         );
     }
 
+    # ...
+
     method spawn_remote_actor ($props) {
         my $actor_ref = $self->_build_actor_ref($props);
 
+        # TODO: this won't throw anything, but maybe we should still check??
         $pid_to_mailbox{ $actor_ref->pid } = Acktor::Mailbox::Remote->new(
             actor_ref   => $actor_ref,
             post_office => $post_office,
@@ -63,6 +70,7 @@ class Acktor::Dispatcher {
     method spawn_actor ($props, %options) {
         my $actor_ref = $self->_build_actor_ref($props, %options);
 
+        # TODO: add try/catch to catch anything throwm by Mailbox::new
         $pid_to_mailbox{ $actor_ref->pid } = Acktor::Mailbox->new( actor_ref => $actor_ref );
 
         logger->log( DEBUG, "spawn_actor( $props ) => $actor_ref" ) if DEBUG;
@@ -70,27 +78,40 @@ class Acktor::Dispatcher {
         return $actor_ref;
     }
 
+    ## ----------------------------------------------------
+    ## Dispatch
+    ## ----------------------------------------------------
+
     method dispatch ($message) {
         logger->log( DEBUG, "dispatch( $message )" ) if DEBUG;
         my $mailbox = $pid_to_mailbox{ $message->to->pid };
-        # XXX - should we check here to see if the mailbox is started?
+        # TODO - if we do not find the mailbox, send to the DeadLetterQueue actor
         $mailbox->enqueue_message( $message );
         $scheduler->schedule( $mailbox );
     }
+
+    ## ----------------------------------------------------
+    ## Loop
+    ## ----------------------------------------------------
 
     method loop (%options) {
         logger->line( "dispatcher::loop" ) if DEBUG;
 
         $init_ref = $self->spawn_actor( Acktor::Props->new( class => 'Acktor::System::Init' ) );
 
+        # TODO: spawn a sys/ actor which will handle system things
+        #       - spawn DeadLetterQueue actor under here
+        # TODO: spawn a user/ actor which will be the parent of all
+
         if (my $init = delete $options{init}) {
             $scheduler->next_tick(sub {
-                # start all the mailboxes created prior to start
-                $_->start foreach values %pid_to_mailbox;
+                # TODO: this should use the $user_ref context
+                # TODO: add try/catch around this
                 $init->( $init_ref->context );
             });
         }
 
+        # TODO: add try/catch that can shut down orderly
         $scheduler->loop(%options);
 
         # TODO: collect stats (zombies, etc)

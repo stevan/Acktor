@@ -8,11 +8,6 @@ class Acktor::Mailbox::Remote :isa(Acktor::Mailbox) {
 
     field $post_office :param;
 
-    method is_started { 1 }
-    # No-ops (for now)
-    method start { () }
-    method stop  { () }
-
     method tick {
         logger->log( DEBUG, "tick ... posting messages to PostOffice" ) if DEBUG;
         $post_office->post_messages( $self->drain_messages );

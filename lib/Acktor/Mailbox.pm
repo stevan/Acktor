@@ -12,20 +12,8 @@ class Acktor::Mailbox {
     field @messages;
 
     ADJUST {
-        $actor_ref->context->set_mailbox( $self );
-    }
-
-    method is_started { !! $actor }
-
-    method start {
-        logger->log( DEBUG, "start for $actor_ref" ) if DEBUG;
-        $actor = $actor_ref->context->props->new_actor
-    }
-
-    method stop  {
-        logger->log( DEBUG, "start for $actor_ref" ) if DEBUG;
-        # XXX - should this trigger anything?
-        $actor = undef;
+        # TODO - add try/catch and throw UnableToStartActor exception
+        $actor = $actor_ref->context->props->new_actor;
     }
 
     method owner { $actor_ref }
@@ -44,8 +32,8 @@ class Acktor::Mailbox {
 
     method tick {
         logger->log( DEBUG, "tick for $actor_ref" ) if DEBUG;
-        # TODO: throw an error if there is no actor ... i.e. not started
         while (@messages) {
+            # TODO - add a try/catch to handle this, messages will be lost
             $actor->receive($actor_ref->context, shift @messages);
         }
     }

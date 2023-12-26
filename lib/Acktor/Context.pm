@@ -10,23 +10,11 @@ class Acktor::Context {
     field $dispatcher :param;
     field $parent     :param = undef;
 
-    field $mailbox;
     field $actor_ref;
     field @children;
 
     method props      { $props      }
     method dispatcher { $dispatcher }
-
-    method set_mailbox ($mb) { $mailbox = $mb }
-    method mailbox           { $mailbox }
-
-    method is_started { $mailbox->is_started }
-
-    method start { $mailbox->start }
-    method stop  {
-        # TODO: stop all the children ...
-        $mailbox->stop;
-    }
 
     method self               { $actor_ref }
     method assign_self ($ref) { $actor_ref = $ref }
@@ -43,7 +31,6 @@ class Acktor::Context {
         logger->log( DEBUG, "spawn( $props )" ) if DEBUG;
         my $child_ref = $dispatcher->spawn_actor($props, parent => $self);
         push @children => $child_ref;
-        $child_ref->context->start;
         return $child_ref;
     }
 

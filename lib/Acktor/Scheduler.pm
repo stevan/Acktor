@@ -50,18 +50,19 @@ class Acktor::Scheduler {
     method loop (%options) {
         logger->line( "scheduler::init" ) if DEBUG;
 
+        my $run_until_done = !$options{forever};
+
         my $tick = 0;
         while (1) {
             $tick++;
             logger->line( "scheduler::tick($tick)" ) if DEBUG;
             if ( scalar @to_be_run == 0 && scalar keys %to_be_run == 0 ) {
-                logger->log( DEBUG, '=>> nothing to run' ) if DEBUG;
-                next;
+                last if $run_until_done;
+                logger->log( DEBUG, '=>> nothing to run, ... yet' ) if DEBUG;
             }
-
-            $self->tick;
-
-            last if $options{max_ticks} && $options{max_ticks} <= $tick;
+            else {
+                $self->tick;
+            }
         }
 
         logger->line( "scheduler::exit" ) if DEBUG;

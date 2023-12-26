@@ -10,9 +10,9 @@ class Acktor::PostOffice {
 
     method outgoing { @outgoing }
 
-    method post_messages (@messages) {
-        logger->log( DEBUG, "Posting(".(join ", " => @messages)) if DEBUG;
-        push @outgoing => @messages;
+    method post_letters (@letters) {
+        logger->log( DEBUG, "Posting(".(join ", " => @letters)) if DEBUG;
+        push @outgoing => @letters;
     }
 }
 

@@ -3,6 +3,8 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
+use Acktor::Mailbox::Letter;
+
 class Acktor::Mailbox::Remote :isa(Acktor::Mailbox) {
     use Acktor::Logging;
 
@@ -10,7 +12,10 @@ class Acktor::Mailbox::Remote :isa(Acktor::Mailbox) {
 
     method tick {
         logger->log( DEBUG, "tick ... posting messages to PostOffice" ) if DEBUG;
-        $post_office->post_messages( $self->drain_messages );
+        my $context = $self->owner->context;
+        $post_office->post_letters( map {
+            Acktor::Mailbox::Letter->new( message => $_, origin => $context )
+        } $self->drain_messages );
     }
 }
 

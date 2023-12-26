@@ -77,7 +77,7 @@ class Acktor::Dispatcher {
     method spawn_actor ($props, %options) {
         my $actor_ref = $self->_build_actor_ref($props, %options);
 
-        # TODO: add try/catch to catch anything throwm by Mailbox::new
+        # TODO: add try/catch to catch anything throwm by Mailbox::new and rethrow a reasonable error
         $pid_to_mailbox{ $actor_ref->pid } = Acktor::Mailbox->new( actor_ref => $actor_ref );
 
         if ( my $alias = $props->alias ) {
@@ -129,13 +129,21 @@ class Acktor::Dispatcher {
         if (my $init = delete $options{init}) {
             $scheduler->next_tick(sub {
                 # TODO: this should use the $user_ref context
-                # TODO: add try/catch around this
-                $init->( $init_ref->context );
+                try {
+                    $init->( $init_ref->context );
+                } catch ($e) {
+                    logger->log( ERROR, "dispatcher::init callback failed with ($e)" ) if ERROR;
+                    # TODO: this should trigger the shutdown of the system
+                }
             });
         }
 
-        # TODO: add try/catch that can shut down orderly
-        $scheduler->loop(%options);
+        try {
+            $scheduler->loop(%options);
+        } catch ($e) {
+            logger->log( ERROR, "scheduler::loop failed with ($e)" ) if ERROR;
+            # TODO: this should trigger the shutdown of the system
+        }
 
         # TODO: collect stats (zombies, etc)
         # TODO: despawn $init_ref

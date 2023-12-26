@@ -38,8 +38,11 @@ class Acktor::System {
 
     method loop (%options) {
         logger->line( "system::loop" ) if DEBUG;
-        # TODOL add try/catch that can shut down orderly
-        $dispatcher->loop(%options);
+        try {
+            $dispatcher->loop(%options);
+        } catch ($e) {
+            logger->log( ERROR, "dispatcher::loop failed with ($e)" ) if ERROR;
+        }
         logger->line( "system::exit" ) if DEBUG;
     }
 }

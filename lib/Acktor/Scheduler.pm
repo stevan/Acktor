@@ -16,11 +16,6 @@ class Acktor::Scheduler {
     method next_tick ($f) { push @to_be_run => $f }
 
     method tick {
-        if ( scalar @to_be_run == 0 && scalar keys %to_be_run == 0 ) {
-            logger->log( DEBUG, 'tick =>> nothing to run' ) if DEBUG;
-            return;
-        }
-
         my @to_run = @to_be_run;
         @to_be_run = ();
 
@@ -32,10 +27,26 @@ class Acktor::Scheduler {
                                           (map $_->owner->to_string, values %to_run)).
                             " )" ) if DEBUG;
 
-        map $_->(),          @to_run;
-        map $_->tick, values %to_run;
+        # we need to be careful with running these
+        # as they are arbitrary callbacks ...
+        foreach my $f (@to_run) {
+            try {
+                $f->();
+            } catch ($e) {
+                logger->log( ERROR, "scheduler::tick->callback($f) failed with ($e)" ) if ERROR;
+                # for the most part we can ignore these, unless they are critical
+                # which will need to be signified by the error object
+            }
+        }
+
+        # mailboxes handle their own exceptions ...
+        $_->tick foreach values %to_run;
     }
 
+
+    # TODO:
+    # I need to take advantage of the %options here to
+    # control how much looping is done
     method loop (%options) {
         logger->line( "scheduler::init" ) if DEBUG;
 
@@ -43,6 +54,10 @@ class Acktor::Scheduler {
         while (1) {
             $tick++;
             logger->line( "scheduler::tick($tick)" ) if DEBUG;
+            if ( scalar @to_be_run == 0 && scalar keys %to_be_run == 0 ) {
+                logger->log( DEBUG, '=>> nothing to run' ) if DEBUG;
+                next;
+            }
 
             $self->tick;
 

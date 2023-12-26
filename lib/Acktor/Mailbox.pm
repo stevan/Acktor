@@ -12,7 +12,6 @@ class Acktor::Mailbox {
     field @messages;
 
     ADJUST {
-        # TODO - add try/catch and throw UnableToStartActor exception
         $actor = $actor_ref->context->props->new_actor;
     }
 
@@ -33,8 +32,16 @@ class Acktor::Mailbox {
     method tick {
         logger->log( DEBUG, "tick for $actor_ref" ) if DEBUG;
         while (@messages) {
-            # TODO - add a try/catch to handle this, messages will be lost
-            $actor->receive($actor_ref->context, shift @messages);
+            my $message = shift @messages;
+            try {
+                $actor->receive($actor_ref->context, $message);
+            } catch ($e) {
+                logger->log( ERROR, "actor::receive($message) failed with ($e)" ) if ERROR;
+                # TODO: decide how to handle this:
+                #       - resume
+                #       - restart
+                #       - stop permanently (ctx->exit/despawn)
+            }
         }
     }
 }

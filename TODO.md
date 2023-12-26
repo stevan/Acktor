@@ -1,7 +1,16 @@
 # TODO
 
-- add Exceptions
-    - throw em all over the place
+- Singals
+    https://github.com/akka/akka/blob/v2.8.5/akka-actor-typed/src/main/scala/akka/actor/typed/MessageAndSignals.scala
+    - for system messages
+        - PreRestart  - sent to Actor right before it is restarted
+        - PostStop    - fired after the Actor, and all it's children are terminated
+        - Terminated  - sent after PostStop to all watchers of this Actor
+        - ChildFailed - the child Actor has failed permanently
+
+- Stopping
+    - $ctx->stop($child);
+    - $ctx->exit;
 
 - Scheduler
     - for timers, etc.

@@ -41,6 +41,22 @@ class Acktor::Context {
         $dispatcher->dispatch($message);
     }
 
+    # ...
+
+    method watch   ($receiver) {}
+    method unwatch ($receiver) {}
+
+    method stop ($child) {
+        # child must actually be a child
+        # call ->exit() on that child's context
+    }
+
+    method exit {
+        # call exit() on all children
+        # despawn this actor-ref
+        # signal all watchers that we've terminated
+    }
+
 }
 
 __END__

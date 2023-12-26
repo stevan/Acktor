@@ -41,6 +41,8 @@ class Acktor::Dispatcher {
 
         my $parent = $options{parent};
 
+        # TODO: if props->alias, then add to %aliases
+
         return Acktor::Ref->new(
             pid     => new_pid($props),
             context => Acktor::Context->new(
@@ -76,6 +78,14 @@ class Acktor::Dispatcher {
         logger->log( DEBUG, "spawn_actor( $props ) => $actor_ref" ) if DEBUG;
 
         return $actor_ref;
+    }
+
+    method despawn_actor ($ref, %options) {
+
+        # TODO:
+        # - remove mailbox
+        #   - shut it down
+
     }
 
     ## ----------------------------------------------------

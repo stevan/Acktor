@@ -1,12 +1,7 @@
 # TODO
 
-- Context
-    - coordinated shutdown with recursive `stop`
-
-- Registry
-    - so Actors can have names
-    - and know under which Process those names live
-    - and can query/cache names from other Processes
+- add Exceptions
+    - throw em all over the place
 
 - Scheduler
     - for timers, etc.
@@ -41,7 +36,6 @@ System
                     Context
                         Props
                         >Dispatcher
-                        >Mailbox
                         >Ref
                         >>(parent/children)
         >PostOffice

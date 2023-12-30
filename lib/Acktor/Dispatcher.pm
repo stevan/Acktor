@@ -17,6 +17,7 @@ class Acktor::Dispatcher {
 
     field $post_office :param;
 
+    field $address;
     field $scheduler;
 
     field %pid_to_mailbox;
@@ -24,6 +25,14 @@ class Acktor::Dispatcher {
 
     ADJUST {
         $scheduler = Acktor::Scheduler->new;
+        $post_office->register( $self );
+    }
+
+    ## ----------------------------------------------------
+
+    method address {
+        state $ADDR_SEQ = 0;
+        $address //= sprintf '%04d@%s' => ++$ADDR_SEQ, 'local';
     }
 
     ## ----------------------------------------------------
@@ -56,11 +65,14 @@ class Acktor::Dispatcher {
 
     # ...
 
-    method spawn_remote_actor ($props) {
+    method spawn_remote_actor ($props, %options) {
+        my $origin = $options{origin} // die 'You must specify the `origin` address for the remote actor';
+
         my $actor_ref = $self->_build_actor_ref($props);
 
         # TODO: this won't throw anything, but maybe we should still check??
         $pid_to_mailbox{ $actor_ref->pid } = Acktor::Mailbox::Remote->new(
+            origin      => $origin,
             actor_ref   => $actor_ref,
             post_office => $post_office,
         );

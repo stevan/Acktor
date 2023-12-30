@@ -36,7 +36,10 @@ sub init ($ctx) {
     }
 
     # we can do this last, because nothing will happen until next tick
-    my $remote = $ctx->dispatcher->spawn_remote_actor(Acktor::Props->new( class => 'Hello', alias => 'RemoteHello' ) );
+    my $remote = $ctx->dispatcher->spawn_remote_actor(
+        Acktor::Props->new( class => 'Hello', alias => 'RemoteHello' ),
+        origin => '001@remote'
+    );
     logger($ctx)->log( INFO, ">> got remote actor RemoteHello($hello)" ) if INFO;
 }
 

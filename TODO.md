@@ -37,10 +37,14 @@
 ```
 System
     PostOffice
+        %Registered
+            >Dispatcher
+        @Letters
     Dispatcher
         %PID-MAILBOX
             MailBox
                 <Actor>
+                @Messages
                 Ref
                     Context
                         Props

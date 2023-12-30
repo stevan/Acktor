@@ -8,15 +8,17 @@ class Acktor::Mailbox::Letter {
 
     use if LOG_LEVEL, 'overload' => '""' => \&to_string;
 
-    field $origin  :param;
-    field $message :param;
+    field $origin      :param;
+    field $destination :param;
+    field $message     :param;
 
-    method origin  { $origin  }
-    method message { $message }
+    method origin      { $origin      }
+    method destination { $destination }
+    method message     { $message     }
 
     field $_to_str;
     method to_string {
-        $_to_str //= sprintf 'Letter[ %s, %s ]' => $message, $origin
+        $_to_str //= sprintf 'Letter[ %s, %s, %s ]' => $destination, $origin, $message;
     }
 }
 

@@ -6,13 +6,19 @@ use builtin      qw[ blessed refaddr true false ];
 class Acktor::PostOffice {
     use Acktor::Logging;
 
-    field @outgoing;
+    field %registered;
 
-    method outgoing { @outgoing }
+    method register ($dispatcher) {
+        $registered{ $dispatcher->address } = $dispatcher;
+    }
 
     method post_letters (@letters) {
         logger->log( DEBUG, "Posting(".(join ", " => @letters)) if DEBUG;
-        push @outgoing => @letters;
+        # TODO - look through the letters and try to deliver them
+        # if letter.destination in %registered
+        #   enqueue message to dispatcher
+        # else
+        #   send to dead letter queue??
     }
 }
 

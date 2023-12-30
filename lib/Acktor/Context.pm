@@ -43,8 +43,8 @@ class Acktor::Context {
 
     # ...
 
-    method watch   ($receiver) {}
-    method unwatch ($receiver) {}
+    method watch   ($to_watch) {}
+    method unwatch ($to_watch) {}
 
     method stop ($child) {
         # child must actually be a child

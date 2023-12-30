@@ -1,3 +1,57 @@
+
+
+
+
+```
+
+use Acktor::builtins qw[ event spawn Props ];
+
+package PingPong {
+    event *Start => Ref[*Ping];
+    event *Ping;
+    event *Pong;
+}
+
+
+class Ping :isa(Acktor) {
+
+    field $pong;
+
+    method Start {
+        $pong = spawn( Props[*Pong] );
+        $pong >>= Start( $context->self );
+    }
+
+    method Ping {
+        $pong >>= *Pong::Pong ;
+    }
+}
+
+
+class Pong :isa(Acktor) {
+
+    field $ping;
+
+    method Start ($ping_ref) {
+        $ping = $ping_ref;
+        $ping >>= *Ping::Ping;
+    }
+
+    method Pong {
+        $ping >>= *Ping::Ping;
+    }
+}
+
+```
+
+
+
+
+
+
+
+
+
 # TODO
 
 - Singals

@@ -20,7 +20,7 @@ class Hello :isa(Acktor) {
 
         my $remote = $ctx->lookup('RemoteHello') // die 'Unable to find RemoteHello actor';
 
-        $remote->send( "FORWARD => ".$message->body );
+        $remote->send( "FORWARD => ".$message->body, $ctx->self );
     }
 }
 
@@ -31,7 +31,7 @@ sub init ($ctx) {
     logger($ctx)->log( INFO, ">> got actor Hello($hello)" ) if INFO;
 
     foreach (0 .. 5) {
-        $hello->send("World $_");
+        $hello->send("World $_", $ctx->self );
         logger($ctx)->log( INFO, ">> sent Hello($hello) $_ message(s)" ) if INFO;
     }
 

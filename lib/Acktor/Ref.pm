@@ -20,7 +20,7 @@ class Acktor::Ref {
     method pid     { $pid     }
     method context { $context }
 
-    method send ($body, $from=undef) {
+    method send ($body, $from) {
         $context->send(Acktor::Message->new( to => $self, from => $from, body => $body ));
     }
 

@@ -9,7 +9,7 @@ class Acktor::Message {
     use if LOG_LEVEL, 'overload' => '""' => \&to_string;
 
     field $to   :param;
-    field $from :param = undef;
+    field $from :param;
     field $body :param;
 
     method to   { $to   }
@@ -20,13 +20,13 @@ class Acktor::Message {
     method to_string {
         $_to_str //= sprintf 'Msg[ %s, %s, %s ]' =>
             $to->pid,
-            ($from ? $from->pid : '_'),
+            $from->pid,
             ref $body ? $body : '"'.($body =~ s/\n/\\n/gr).'"';
     }
 
     field $_packed;
     method pack {
-        $_packed //= { to => $to->pid, ($from ? (from => $from->pid) : ()), body => $body };
+        $_packed //= { to => $to->pid, from => $from->pid, body => $body };
     }
 }
 

@@ -142,6 +142,20 @@ class Acktor::Dispatcher {
             $scheduler->next_tick(sub {
                 # TODO: this should use the $user_ref context
                 try {
+
+                    # FIXME:
+                    # this should be an actual async message pass
+                    # not this bullshit.
+                    local $Acktor::CURRENT_CONTEXT = $init_ref->context;
+                    local $Acktor::CURRENT_MESSAGE = Acktor::Message->new(
+                        to   => $init_ref,
+                        from => $init_ref,
+                        body => Acktor::Event->new(
+                            symbol  => *Acktor::System::Init,
+                            context => $init_ref->context
+                        )
+                    );
+
                     $init->( $init_ref->context );
                 } catch ($e) {
                     logger->log( ERROR, "dispatcher::init callback failed with ($e)" ) if ERROR;

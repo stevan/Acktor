@@ -4,11 +4,19 @@ use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
 use Acktor::Message;
+use Acktor::Event;
 
 class Acktor::Ref {
     use Acktor::Logging;
 
-    use if LOG_LEVEL, 'overload' => '""' => \&to_string;
+    use overload (
+        fallback => 1,
+        '>>=' => sub ($self, $event, @) {
+            $self->send( $event );
+            $self;
+        },
+        (LOG_LEVEL ? ('""' => \&to_string) : ())
+    );
 
     field $context :param;
     field $pid     :param;
@@ -20,8 +28,12 @@ class Acktor::Ref {
     method pid     { $pid     }
     method context { $context }
 
-    method send ($body, $from) {
-        $context->send(Acktor::Message->new( to => $self, from => $from, body => $body ));
+    method send ($event) {
+        $context->send(Acktor::Message->new(
+            to   => $self,
+            from => $event->context->self,
+            body => $event
+        ));
     }
 
     field $_to_str;

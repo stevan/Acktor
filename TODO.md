@@ -1,5 +1,17 @@
 # TODO
 
+- make Dispatcher &init callback a proper message pass scenario
+    - add the code to Acktor::System::Init
+
+- make `Props` constructor and add it to Tools
+
+- make zombie-detector for end sequence
+
+- implement stop/exit/despawn/etc.
+
+
+# TO ADD
+
 - Singals
     https://github.com/akka/akka/blob/v2.8.5/akka-actor-typed/src/main/scala/akka/actor/typed/MessageAndSignals.scala
     - for system messages
@@ -35,23 +47,33 @@
 ## Dependency Diagram
 
 ```
+Legend:
+   % = map of objects
+   @ = list of objects
+   > = circular reference
+  >> = many circular refs
+  <! = I/O watcher
+<..> = The code you write
+
+
 System
-    PostOffice
-        %Registered
-            >Dispatcher
-        @Letters
-    Dispatcher
-        %PID-MAILBOX
-            MailBox
-                <Actor>
-                @Messages
-                Ref
-                    Context
-                        Props
-                        >Dispatcher
-                        >Ref
-                        >>(parent/children)
-        >PostOffice
+    PostOffice <!------------------------------+
+        %Registered                            |
+            >Dispatcher                        |
+        @Letters                               |
+--------------------------------------------(socket)------- [ fork() ]
+    Dispatcher                                 |
+        %Mailboxes                             |
+            MailBox                            |
+                <Actor>                        |
+                @Messages                      |
+                Ref                            |
+                    Context                    |
+                        Props                  |
+                        >Dispatcher            |
+                        >Ref                   |
+                        >>(parent/children)    |
+        >PostOffice <!-------------------------+
         Scheduler
             @Functions
             @Mailboxes

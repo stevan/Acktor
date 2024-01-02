@@ -19,7 +19,7 @@ class Ping :isa(Acktor) {
     field $pong;
 
     method Start {
-        $pong = spawn( Acktor::Props->new( class => 'Pong' ) );
+        $pong = spawn( actor_of( 'Pong' ) );
         $pong >>= event *Pong::Start;
     }
 
@@ -50,7 +50,7 @@ class Pong :isa(Acktor) {
 }
 
 sub init ($ctx) {
-    my $Ping = spawn( Acktor::Props->new( class => 'Ping', args => { max_bounce => 5 } ) );
+    my $Ping = spawn( actor_of( Ping => max_bounce => 5 ) );
 
     $Ping >>= event *Ping::Start;
 }

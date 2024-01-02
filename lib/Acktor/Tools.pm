@@ -4,15 +4,24 @@ use experimental qw[ builtin];
 use builtin      qw[ export_lexically ];
 
 use Acktor::Event;
+use Acktor::Props;
 use Acktor::Logging ();
 
 sub import {
     export_lexically(
-        '&event'   => \&event,
-        '&spawn'   => \&spawn,
-        '&context' => \&context,
-        '&sender'  => \&sender,
-        '&logger'  => \&logger,
+        '&event'    => \&event,
+        '&spawn'    => \&spawn,
+        '&context'  => \&context,
+        '&sender'   => \&sender,
+        '&logger'   => \&logger,
+        '&actor_of' => \&actor_of,
+    );
+}
+
+sub actor_of ($class, %args) {
+    Acktor::Props->new(
+        class => $class,
+        (keys %args ? (args => \%args) : ())
     );
 }
 

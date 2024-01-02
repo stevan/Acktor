@@ -1,6 +1,4 @@
-# Acktor
-
-```
+```fortran
 __  __  _________        _    _
 \ \ \ \ \______/ \______| | _| |_ ___  _ __
  \ \ \ \ \____/ _ \ / __| |/ / __/ _ \| '__|
@@ -15,7 +13,7 @@ Yet Another Attempt At An Actor Model For Perl.
 
 ## Example
 
-```perl
+```ruby
 use Acktor;
 use Acktor::System;
 use Acktor::Tools;

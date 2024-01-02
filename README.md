@@ -1,18 +1,24 @@
-#!perl
+# Acktor
 
-use v5.38;
-use experimental qw[ class builtin try ];
-use builtin      qw[ blessed refaddr true false ];
+```
+__  __  _________        _    _
+\ \ \ \ \______/ \______| | _| |_ ___  _ __
+ \ \ \ \ \____/ _ \ / __| |/ / __/ _ \| '__|
+ / / / / /___/ ___ \ (__|   <| || (_) | |
+/_/ /_/ /___/_/   \_\___|_|\_\\__\___/|_|
 
-use Data::Dumper;
-use Test::More;
+```
 
+## YAAAAAM4P
+
+Yet Another Attempt At An Actor Model For Perl.
+
+## Example
+
+```perl
 use Acktor;
-use Acktor::Tools;
-
 use Acktor::System;
-use Acktor::Props;
-use Acktor::Logging;
+use Acktor::Tools;
 
 class Pong :isa(Acktor) {
     field $ping;
@@ -49,13 +55,10 @@ class Ping :isa(Acktor) {
 }
 
 sub init ($ctx) {
-    my $Ping = spawn( actor_of Ping::, ( max_bounce => 5 ) );
-
+    my $Ping = spawn( actor_of Ping::, max_bounce => 5 );
     $Ping >>= event *Ping::Start;
 }
 
-my $system = Acktor::System->new;
-
-$system->loop( init => \&init );
-
-done_testing;
+Acktor::System->new
+              ->loop( init => \&init );
+```

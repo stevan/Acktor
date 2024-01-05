@@ -4,10 +4,11 @@
     - add the code to Acktor::System::Init
 
 - make `Props` constructor and add it to Tools
+    - currently have `actor_of` which is okay for now
 
 - make zombie-detector for end sequence
 
-- implement stop/exit/despawn/etc.
+- implement DeadLetterQueue
 
 
 # TO ADD

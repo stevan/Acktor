@@ -13,6 +13,10 @@ class Acktor::Scheduler {
         $to_be_run{ refaddr $mailbox } = $mailbox;
     }
 
+    method unschedule ($mailbox) {
+        delete $to_be_run{ refaddr $mailbox };
+    }
+
     method next_tick ($f) { push @to_be_run => $f }
 
     method tick {

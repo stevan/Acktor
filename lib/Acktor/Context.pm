@@ -3,6 +3,8 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
+use Acktor::System::Message;
+
 class Acktor::Context {
     use Acktor::Logging;
 
@@ -43,18 +45,29 @@ class Acktor::Context {
 
     # ...
 
-    method watch   ($to_watch) {}
-    method unwatch ($to_watch) {}
-
     method stop ($child) {
-        # child must actually be a child
-        # call ->exit() on that child's context
+        # TODO: verify that child is actually a child of this context
+        # and remove the child from the list of children
+
+        $self->send(
+            Acktor::System::Message::PoisonPill->new(
+                to   => $child,
+                from => $actor_ref
+            )
+        );
     }
 
     method exit {
-        # call exit() on all children
-        # despawn this actor-ref
-        # signal all watchers that we've terminated
+        #foreach my $child (@children) {
+        #    $self->stop($child);
+        #}
+
+        $self->send(
+            Acktor::System::Message::PoisonPill->new(
+                to   => $actor_ref,
+                from => $actor_ref
+            )
+        );
     }
 
 }

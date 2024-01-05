@@ -35,6 +35,15 @@ class Acktor::Mailbox {
         logger->log( DEBUG, "tick for $actor_ref" ) if DEBUG;
         while (@messages) {
             my $message = shift @messages;
+
+            # TODO:
+            # this could be much better ...
+            if ($message isa Acktor::System::Message::PoisonPill) {
+                logger->log( DEBUG, "Got PoisonPill for $actor_ref, despawning" ) if DEBUG;
+                $actor_ref->context->dispatcher->despawn_actor( $actor_ref );
+                last;
+            }
+
             try {
                 $actor->receive($actor_ref->context, $message);
             } catch ($e) {

@@ -17,19 +17,20 @@ use Acktor::Logging;
 class Hello :isa(Acktor) {
     use Acktor::Logging;
 
-    method ForwardMessage ($ctx, $message) {
-        logger->log( INFO, ">> ".$message->body ) if INFO;
+    method ForwardMessage ($body) {
+        logger->log( INFO, ">> got ($body)" ) if INFO;
 
-        my $remote = $ctx->lookup('RemoteHello') // die 'Unable to find RemoteHello actor';
+        my $remote = context->lookup('RemoteHello')
+            // die 'Unable to find RemoteHello actor';
 
-        $remote->send( event *Hello::ForwardMessage => "FORWARD => ".$message->body );
+        $remote >>= event *Hello::ForwardMessage => "FORWARD => $body";
     }
 }
 
 sub init ($ctx) {
     logger->log( INFO, ">> runnning init" ) if INFO;
 
-    my $hello = $ctx->spawn(Acktor::Props->new( class => 'Hello' ));
+    my $hello = spawn( actor_of 'Hello' );
     logger->log( INFO, ">> got actor Hello($hello)" ) if INFO;
 
     foreach (0 .. 5) {

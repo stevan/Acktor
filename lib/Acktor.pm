@@ -4,10 +4,8 @@ use builtin      qw[ blessed refaddr true false ];
 
 class Acktor {
 
-
     our $CURRENT_CONTEXT;
     our $CURRENT_MESSAGE;
-
 
     method receive ($ctx, $message) {
         my $method = $message->body->symbol;

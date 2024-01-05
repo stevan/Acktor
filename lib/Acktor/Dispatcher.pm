@@ -101,14 +101,33 @@ class Acktor::Dispatcher {
         return $actor_ref;
     }
 
-    method despawn_actor ($ref, %options) {
+    method despawn_actor ($actor_ref, %options) {
+        my $pid = $actor_ref->pid;
 
-        # TODO:
-        # - remove mailbox
-        #   - shut it down
-        # - check for alias
-        #   - remove it in a sensible way
+        if (exists $pid_to_mailbox{ $pid }) {
+            my $mailbox = delete $pid_to_mailbox{ $pid };
 
+            logger->log( DEBUG, "despawn_actor( $pid ) => $actor_ref" ) if DEBUG;
+
+            # FIXME:
+            # this need to call stop on the Mailbox and
+            # it's internally held Actor instance. But
+            # for now we just let it get DESTROY-ed by
+            # Perl (hopefully) and worry about this later.
+
+            if ( my $alias = $actor_ref->context->props->alias ) {
+                delete $aliases{ $alias };
+            }
+
+            $scheduler->unschedule( $mailbox );
+        }
+        else {
+            # XXX - this should never happen, and this is
+            # probably not the right way to deal with this
+            # but we can leave it for now, knowing we want
+            # to fix it later on.
+            die "Could not find the actor_ref($actor_ref) with pid($pid) in this dispatcher!";
+        }
     }
 
     ## ----------------------------------------------------
@@ -118,7 +137,10 @@ class Acktor::Dispatcher {
     method dispatch ($message) {
         logger->log( DEBUG, "dispatch( $message )" ) if DEBUG;
         my $mailbox = $pid_to_mailbox{ $message->to->pid };
-        # TODO - if we do not find the mailbox, send to the DeadLetterQueue actor
+        # TODO:
+        # if we do not find the mailbox,
+        # or the mailbox is stopped
+        # -> send to the DeadLetterQueue actor
         $mailbox->enqueue_message( $message );
         $scheduler->schedule( $mailbox );
     }

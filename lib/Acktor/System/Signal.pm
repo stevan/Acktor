@@ -3,7 +3,7 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
-class Acktor::System::Message {
+class Acktor::System::Signal {
     use Acktor::Logging;
 
     use if LOG_LEVEL, 'overload' => '""' => \&to_string;
@@ -16,11 +16,11 @@ class Acktor::System::Message {
 
     field $_to_str;
     method to_string {
-        $_to_str //= sprintf 'SystemMsg[ %s, %s, %s ]' => blessed $self, $to->pid, $from->pid
+        $_to_str //= sprintf 'Sig[ %s, %s, %s ]' => blessed $self, $to->pid, $from->pid
     }
 }
 
-class Acktor::System::Message::PoisonPill :isa(Acktor::System::Message) {}
+class Acktor::System::Signal::PoisonPill :isa(Acktor::System::Signal) {}
 
 __END__
 

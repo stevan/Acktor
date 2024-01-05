@@ -3,7 +3,7 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
-use Acktor::System::Message;
+use Acktor::System::Signal;
 
 class Acktor::Context {
     use Acktor::Logging;
@@ -46,11 +46,16 @@ class Acktor::Context {
     # ...
 
     method stop ($child) {
-        # TODO: verify that child is actually a child of this context
-        # and remove the child from the list of children
+        my $count = scalar @children;
+        @children = grep { $_->pid ne $child->pid } @children;
 
+        if ($count == scalar @children) {
+            die "child($child) is not a Child of this context";
+        }
+
+        # TODO - make this better
         $self->send(
-            Acktor::System::Message::PoisonPill->new(
+            Acktor::System::Signal::PoisonPill->new(
                 to   => $child,
                 from => $actor_ref
             )
@@ -58,12 +63,13 @@ class Acktor::Context {
     }
 
     method exit {
-        #foreach my $child (@children) {
-        #    $self->stop($child);
-        #}
+        foreach my $child (@children) {
+            $self->stop($child);
+        }
 
+        # TODO - make this better
         $self->send(
-            Acktor::System::Message::PoisonPill->new(
+            Acktor::System::Signal::PoisonPill->new(
                 to   => $actor_ref,
                 from => $actor_ref
             )

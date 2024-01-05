@@ -42,8 +42,7 @@ class Ping :isa(Acktor) {
         if ( $count <= $max_bounce ) {
             $pong >>= event *Pong::Pong, $count;
         } else {
-            context->stop( $pong );
-            context->exit;
+            context->exit; # will stop $pong as well
         }
     }
 }

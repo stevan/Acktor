@@ -38,7 +38,7 @@ class Acktor::Mailbox {
 
             # TODO:
             # this could be much better ...
-            if ($message isa Acktor::System::Message::PoisonPill) {
+            if ($message isa Acktor::System::Signal::PoisonPill) {
                 logger->log( DEBUG, "Got PoisonPill for $actor_ref, despawning" ) if DEBUG;
                 $actor_ref->context->dispatcher->despawn_actor( $actor_ref );
                 last;

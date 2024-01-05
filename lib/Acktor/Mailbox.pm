@@ -9,6 +9,7 @@ class Acktor::Mailbox {
     field $actor_ref :param;
 
     field $actor;
+    field @signals;
     field @messages;
 
     ADJUST {
@@ -18,6 +19,22 @@ class Acktor::Mailbox {
     method owner { $actor_ref }
 
     method address { $actor_ref->context->dispatcher->address }
+
+    # ... signals
+
+    method all_signals    {           @signals }
+    method has_signals    { !! scalar @signals }
+    method enqueue_signal ($message) {
+        push @signals => $message;
+    }
+
+    method drain_signals {
+        my @sigs  = @signals;
+        @signals = ();
+        return @sigs;
+    }
+
+    # ... messages
 
     method all_messages    {           @messages }
     method has_messages    { !! scalar @messages }
@@ -31,19 +48,29 @@ class Acktor::Mailbox {
         return @msgs;
     }
 
+    # ... tick
+
     method tick {
         logger->log( DEBUG, "tick for $actor_ref" ) if DEBUG;
-        while (@messages) {
-            my $message = shift @messages;
+
+        my @sigs = $self->drain_signals;
+
+        while (@sigs) {
+            my $signal = shift @sigs;
 
             # TODO:
             # this could be much better ...
-            if ($message isa Acktor::System::Signal::PoisonPill) {
+            if ($signal isa Acktor::System::Signal::PoisonPill) {
                 logger->log( DEBUG, "Got PoisonPill for $actor_ref, despawning" ) if DEBUG;
                 $actor_ref->context->dispatcher->despawn_actor( $actor_ref );
-                last;
+                return;
             }
+        }
 
+        my @msgs = $self->drain_messages;
+
+        while (@msgs) {
+            my $message = shift @msgs;
             try {
                 $actor->receive($actor_ref->context, $message);
             } catch ($e) {

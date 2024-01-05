@@ -131,7 +131,7 @@ class Acktor::Dispatcher {
     }
 
     ## ----------------------------------------------------
-    ## Dispatch
+    ## Dispatch & Singal
     ## ----------------------------------------------------
 
     method dispatch ($message) {
@@ -142,6 +142,17 @@ class Acktor::Dispatcher {
         # or the mailbox is stopped
         # -> send to the DeadLetterQueue actor
         $mailbox->enqueue_message( $message );
+        $scheduler->schedule( $mailbox );
+    }
+
+    method signal ($signal) {
+        logger->log( DEBUG, "signal( $signal )" ) if DEBUG;
+        my $mailbox = $pid_to_mailbox{ $signal->to->pid };
+        # TODO:
+        # if we do not find the mailbox,
+        # or the mailbox is stopped
+        # -> send to the DeadLetterQueue actor
+        $mailbox->enqueue_signal( $signal );
         $scheduler->schedule( $mailbox );
     }
 

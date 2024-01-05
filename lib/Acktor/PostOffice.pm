@@ -13,7 +13,7 @@ class Acktor::PostOffice {
     }
 
     method post_letters (@letters) {
-        logger->log( DEBUG, "Posting(".(join ", " => @letters)) if DEBUG;
+        logger->log( WARN, "Posting(".(join ", " => @letters)) if WARN;
         # TODO - look through the letters and try to deliver them
         # if letter.destination in %registered
         #   enqueue message to dispatcher

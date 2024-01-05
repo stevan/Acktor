@@ -54,7 +54,7 @@ class Acktor::Context {
         }
 
         # TODO - make this better
-        $self->send(
+        $dispatcher->signal(
             Acktor::System::Signal::PoisonPill->new(
                 to   => $child,
                 from => $actor_ref
@@ -68,7 +68,7 @@ class Acktor::Context {
         }
 
         # TODO - make this better
-        $self->send(
+        $dispatcher->signal(
             Acktor::System::Signal::PoisonPill->new(
                 to   => $actor_ref,
                 from => $actor_ref

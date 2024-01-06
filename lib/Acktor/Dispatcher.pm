@@ -163,39 +163,29 @@ class Acktor::Dispatcher {
     method loop (%options) {
         logger->line( "dispatcher::loop" ) if DEBUG;
 
+        my $init = delete $options{init} // sub {};
+
         my $init_ref = $self->spawn_actor(
-            Acktor::Props->new( class => 'Acktor::System::Init', alias => 'init' )
+            Acktor::Props->new(
+                alias => 'init',
+                class => Acktor::System::Init::,
+                args  => { init_callback => $init }
+            )
         );
 
         # TODO: spawn a sys/ actor which will handle system things
         #       - spawn DeadLetterQueue actor under here
         # TODO: spawn a user/ actor which will be the parent of all
 
-        if (my $init = delete $options{init}) {
-            $scheduler->next_tick(sub {
-                # TODO: this should use the $user_ref context
-                try {
-
-                    # FIXME:
-                    # this should be an actual async message pass
-                    # not this bullshit.
-                    local $Acktor::CURRENT_CONTEXT = $init_ref->context;
-                    local $Acktor::CURRENT_MESSAGE = Acktor::Message->new(
-                        to   => $init_ref,
-                        from => $init_ref,
-                        body => Acktor::Event->new(
-                            symbol  => *Acktor::System::Init,
-                            context => $init_ref->context
-                        )
-                    );
-
-                    $init->( $init_ref->context );
-                } catch ($e) {
-                    logger->log( ERROR, "dispatcher::init callback failed with ($e)" ) if ERROR;
-                    # TODO: this should trigger the shutdown of the system
-                }
-            });
-        }
+        # TODO: this should be the user/ actor, when we have one
+        $scheduler->next_tick(sub {
+            $init_ref->send(
+                Acktor::Event->new(
+                    symbol  => *Acktor::System::Init::Initialize,
+                    context => $init_ref->context
+                )
+            );
+        });
 
         try {
             $scheduler->loop(%options);

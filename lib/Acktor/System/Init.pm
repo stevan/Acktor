@@ -3,8 +3,21 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
-class Acktor::System::Init :isa(Acktor) {
+use Acktor::Tools;
 
+class Acktor::System::Init :isa(Acktor) {
+    use Acktor::Logging;
+
+    field $init_callback :param;
+
+    method Initialize {
+        try {
+            $init_callback->( context );
+        } catch ($e) {
+            logger->log( ERROR, "dispatcher::init callback failed with ($e)" ) if ERROR;
+            # TODO: this should trigger the shutdown of the system
+        }
+    }
 }
 
 

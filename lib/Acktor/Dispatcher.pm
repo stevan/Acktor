@@ -39,6 +39,8 @@ class Acktor::Dispatcher {
 
     method init_ref { $aliases{init} }
 
+    method scheduler { $scheduler }
+
     method lookup ($alias) { $aliases{ $alias } }
 
     ## ----------------------------------------------------

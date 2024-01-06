@@ -1,13 +1,5 @@
 # TODO
 
-- make Dispatcher &init callback a proper message pass scenario
-    - add the code to Acktor::System::Init
-
-- make zombie-detector for end sequence
-
-- implement DeadLetterQueue
-
-- add explict `return` everywhere
 
 
 # TO ADD

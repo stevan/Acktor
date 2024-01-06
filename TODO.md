@@ -1,5 +1,8 @@
 # TODO
 
+- stop sequence
+    - https://getakka.net/articles/actors/receive-actor-api.html#stopping-actors
+
 
 
 # TO ADD

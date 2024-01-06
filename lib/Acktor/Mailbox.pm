@@ -53,32 +53,34 @@ class Acktor::Mailbox {
     method tick {
         logger->log( DEBUG, "tick for $actor_ref" ) if DEBUG;
 
-        my @sigs = $self->drain_signals;
+        if (@signals) {
+            my @sigs = $self->drain_signals;
+            while (@sigs) {
+                my $signal = shift @sigs;
 
-        while (@sigs) {
-            my $signal = shift @sigs;
-
-            # TODO:
-            # this could be much better ...
-            if ($signal isa Acktor::System::Signal::PoisonPill) {
-                logger->log( DEBUG, "Got PoisonPill for $actor_ref, despawning" ) if DEBUG;
-                $actor_ref->context->dispatcher->despawn_actor( $actor_ref );
-                return;
+                # TODO:
+                # this could be much better ...
+                if ($signal isa Acktor::System::Signal::PoisonPill) {
+                    logger->log( DEBUG, "Got PoisonPill for $actor_ref, despawning" ) if DEBUG;
+                    $actor_ref->context->dispatcher->despawn_actor( $actor_ref );
+                    return;
+                }
             }
         }
 
-        my @msgs = $self->drain_messages;
-
-        while (@msgs) {
-            my $message = shift @msgs;
-            try {
-                $actor->receive($actor_ref->context, $message);
-            } catch ($e) {
-                logger->log( ERROR, "actor::receive($message) failed with ($e)" ) if ERROR;
-                # TODO: decide how to handle this:
-                #       - resume
-                #       - restart
-                #       - stop permanently (ctx->exit/despawn)
+        if (@messages) {
+            my @msgs = $self->drain_messages;
+            while (@msgs) {
+                my $message = shift @msgs;
+                try {
+                    $actor->receive($actor_ref->context, $message);
+                } catch ($e) {
+                    logger->log( ERROR, "actor::receive($message) failed with ($e)" ) if ERROR;
+                    # TODO: decide how to handle this:
+                    #       - resume
+                    #       - restart
+                    #       - stop permanently (ctx->exit/despawn)
+                }
             }
         }
     }

@@ -20,31 +20,43 @@ class Acktor::Scheduler {
     method next_tick ($f) { push @to_be_run => $f }
 
     method tick {
-        my @to_run = @to_be_run;
-        @to_be_run = ();
+        my @to_run;
+        my %to_run;
 
-        my %to_run = %to_be_run;
-        %to_be_run = ();
+        if ( @to_be_run ) {
+            @to_run    = @to_be_run;
+            @to_be_run = ();
+        }
 
-        logger->log( DEBUG, "tick =>> running( ".
-                            (join ', ' => (map "$_",                        @to_run),
-                                          (map $_->owner->to_string, values %to_run)).
-                            " )" ) if DEBUG;
+        if ( keys %to_be_run ) {
+            %to_run    = %to_be_run;
+            %to_be_run = ();
+        }
 
-        # we need to be careful with running these
-        # as they are arbitrary callbacks ...
-        foreach my $f (@to_run) {
-            try {
-                $f->();
-            } catch ($e) {
-                logger->log( ERROR, "scheduler::tick->callback($f) failed with ($e)" ) if ERROR;
-                # for the most part we can ignore these, unless they are critical
-                # which will need to be signified by the error object
+        if ( @to_run ) {
+            logger->log( DEBUG, "tick =>> running callbacks( ".(join ', ' => (map "$_", @to_run))." )" ) if DEBUG;
+
+            # we need to be careful with running these
+            # as they are arbitrary callbacks ...
+            foreach my $f (@to_run) {
+                try {
+                    $f->();
+                } catch ($e) {
+                    logger->log( ERROR, "scheduler::tick->callback($f) failed with ($e)" ) if ERROR;
+                    # for the most part we can ignore these, unless they are critical
+                    # which will need to be signified by the error object
+                }
             }
         }
 
-        # mailboxes handle their own exceptions ...
-        $_->tick foreach values %to_run;
+        if ( keys %to_run ) {
+            logger->log( DEBUG, "tick =>> running mailboxes( ".
+                                (join ', ' => (map $_->owner->to_string, values %to_run)).
+                                " )" ) if DEBUG;
+
+            # mailboxes handle their own exceptions ...
+            $_->tick foreach values %to_run;
+        }
     }
 
 

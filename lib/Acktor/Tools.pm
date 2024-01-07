@@ -20,9 +20,13 @@ sub import {
 
 sub actor_of ($class, %args) {
     $class =~ s/^\*(main\:\:)?(.*)\:\:/$2/;
+
+    my $alias = delete $args{alias};
+
     Acktor::Props->new(
         class => $class,
-        (keys %args ? (args => \%args) : ())
+        (keys %args ? (args  => \%args) : ()),
+        (    $alias ? (alias => $alias) : ()),
     );
 }
 

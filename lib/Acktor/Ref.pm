@@ -9,14 +9,7 @@ use Acktor::Event;
 class Acktor::Ref {
     use Acktor::Logging;
 
-    use overload (
-        fallback => 1,
-        '>>=' => sub ($self, $event, @) {
-            $self->send( $event );
-            $self;
-        },
-        (LOG_LEVEL ? ('""' => \&to_string) : ())
-    );
+    use if LOG_LEVEL, 'overload' => '""' => \&to_string;
 
     field $context :param;
     field $pid     :param;

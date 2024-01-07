@@ -25,17 +25,17 @@ class ErlangTest :isa(Acktor) {
 
     method Ping ($count) {
         if (defined $next) {
-            $next >>= event *Ping => $count + 1;
+            $next->send( event *Ping => $count + 1 );
         }
     }
 }
 
 sub init ($ctx) {
-    my $start = spawn( actor_of ErlangTest => (id => 0) );
+    my $start = spawn( actor_of *ErlangTest:: => (id => 0) );
 
     my $t = $start;
     foreach my $id ( 1 .. $NUM_PROCESSES ) {
-        $t = spawn( actor_of ErlangTest => (
+        $t = spawn( actor_of *ErlangTest:: => (
             id   => $id,
             next => $t,
         ));
@@ -44,7 +44,7 @@ sub init ($ctx) {
     $MSG_START = time();
     say "Process: ".($MSG_START - $START);
 
-    $t >>= event *ErlangTest::Ping => 0 foreach 1 .. $NUM_MESSAGES;
+    $t->send( event *ErlangTest::Ping => 0 ) foreach 1 .. $NUM_MESSAGES;
 }
 
 my $system = Acktor::System->new;

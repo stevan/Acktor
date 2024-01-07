@@ -23,11 +23,11 @@ class Pong :isa(Acktor) {
 
     method Start {
         $ping = sender;
-        $ping >>= event *Ping::Ping, 0;
+        $ping->send( event *Ping::Ping, 0 );
     }
 
     method Pong ($count) {
-        $ping >>= event *Ping::Ping, $count;
+        $ping->send( event *Ping::Ping, $count );
     }
 }
 
@@ -37,23 +37,23 @@ class Ping :isa(Acktor) {
 
     method Start {
         $pong = spawn( actor_of Pong:: );
-        $pong >>= event *Pong::Start;
+        $pong->send( event *Pong::Start );
     }
 
     method Ping ($count) {
         $count++;
 
         if ( $count <= $max_bounce ) {
-            $pong >>= event *Pong::Pong, $count;
+            $pong->send( event *Pong::Pong, $count );
         } else {
-            context->exit; # this will stop $pong as well
+            context->exit; # will stop $pong as well
         }
     }
 }
 
 sub init ($ctx) {
-    my $Ping = spawn( actor_of Ping::, max_bounce => 5 );
-    $Ping >>= event *Ping::Start;
+    my $Ping = spawn( actor_of Ping::, ( max_bounce => 5 ) );
+    $Ping->send( event *Ping::Start );
 }
 
 Acktor::System->new

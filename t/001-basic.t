@@ -23,19 +23,19 @@ class Hello :isa(Acktor) {
         my $remote = context->lookup('RemoteHello')
             // die 'Unable to find RemoteHello actor';
 
-        $remote >>= event *Hello::ForwardMessage => "FORWARD => $body";
+        $remote->send( event *Hello::ForwardMessage => "FORWARD => $body" );
     }
 }
 
 sub init ($ctx) {
     logger->log( INFO, ">> runnning init" ) if INFO;
 
-    my $hello = spawn( actor_of 'Hello' );
+    my $hello = spawn( actor_of *Hello:: );
     logger->log( INFO, ">> got actor Hello($hello)" ) if INFO;
 
     foreach (0 .. 5) {
 
-        $hello >>= event *Hello::ForwardMessage => "World $_";
+        $hello->send( event *Hello::ForwardMessage => "World $_" );
 
         logger->log( INFO, ">> sent Hello($hello) $_ message(s)" ) if INFO;
     }

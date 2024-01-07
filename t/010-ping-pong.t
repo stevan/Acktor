@@ -15,24 +15,39 @@ use Acktor::Props;
 use Acktor::Logging;
 
 class Pong :isa(Acktor) {
+    use Test::More;
+
+    our $BOUNCES = 0;
+
     field $ping;
 
     method Start {
         $ping = sender;
+        isa_ok($ping, 'Acktor::Ref');
+        is($ping->context->props->class, 'Ping', '... the Actor is of the expected class');
+
         $ping->send( event *Ping::Ping, 0 );
     }
 
     method Pong ($count) {
         $ping->send( event *Ping::Ping, $count );
+        $BOUNCES++;
     }
 }
 
 class Ping :isa(Acktor) {
+    use Test::More;
+
     field $max_bounce :param;
     field $pong;
 
+    our $BOUNCES = 0;
+
     method Start {
         $pong = spawn( actor_of Pong:: );
+        isa_ok($pong, 'Acktor::Ref');
+        is($pong->context->props->class, 'Pong', '... the Actor is of the expected class');
+
         $pong->send( event *Pong::Start );
     }
 
@@ -40,6 +55,7 @@ class Ping :isa(Acktor) {
         $count++;
 
         if ( $count <= $max_bounce ) {
+            $BOUNCES++;
             $pong->send( event *Pong::Pong, $count );
         } else {
             context->exit; # will stop $pong as well
@@ -49,12 +65,18 @@ class Ping :isa(Acktor) {
 
 sub init ($ctx) {
     my $Ping = spawn( actor_of *Ping::, ( max_bounce => 5 ) );
+    isa_ok($Ping, 'Acktor::Ref');
+    is($Ping->context->props->class, 'Ping', '... the Actor is of the expected class');
 
     $Ping->send( event *Ping::Start );
 }
 
 my $system = Acktor::System->new;
+isa_ok($system, 'Acktor::System');
 
 $system->loop( init => \&init );
+
+is($Ping::BOUNCES, 5, '... Ping::Ping was called the expected number of times');
+is($Pong::BOUNCES, 5, '... Pong::Pong was called the expected number of times');
 
 done_testing;

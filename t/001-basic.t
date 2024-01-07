@@ -16,40 +16,30 @@ use Acktor::Logging;
 
 class Hello :isa(Acktor) {
     use Acktor::Logging;
+    use Test::More;
 
-    method ForwardMessage ($body) {
-        logger->log( INFO, ">> got ($body)" ) if INFO;
+    our $GREETED = 0;
 
-        my $remote = context->lookup('RemoteHello')
-            // die 'Unable to find RemoteHello actor';
-
-        $remote->send( event *Hello::ForwardMessage => "FORWARD => $body" );
+    method Greet ($body) {
+        logger->log( INFO, ">> Hello $body" ) if INFO;
+        is($body, 'World', '... got the expected greeting');
+        $GREETED++;
     }
 }
 
 sub init ($ctx) {
-    logger->log( INFO, ">> runnning init" ) if INFO;
-
     my $hello = spawn( actor_of *Hello:: );
-    logger->log( INFO, ">> got actor Hello($hello)" ) if INFO;
+    isa_ok($hello, 'Acktor::Ref');
+    is($hello->context->props->class, 'Hello', '... the Actor is of the expected class');
 
-    foreach (0 .. 5) {
-
-        $hello->send( event *Hello::ForwardMessage => "World $_" );
-
-        logger->log( INFO, ">> sent Hello($hello) $_ message(s)" ) if INFO;
-    }
-
-    # we can do this last, because nothing will happen until next tick
-    my $remote = $ctx->dispatcher->spawn_remote_actor(
-        Acktor::Props->new( class => 'Hello', alias => 'RemoteHello' ),
-        origin => '001@remote'
-    );
-    logger->log( INFO, ">> got remote actor RemoteHello($hello)" ) if INFO;
+    $hello->send( event *Hello::Greet => "World" );
 }
 
 my $system = Acktor::System->new;
+isa_ok($system, 'Acktor::System');
 
 $system->loop( init => \&init );
+
+is($Hello::GREETED, 1, '... Hello::Greet was called once');
 
 done_testing;

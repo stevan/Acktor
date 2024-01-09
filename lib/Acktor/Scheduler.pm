@@ -87,8 +87,8 @@ class Acktor::Scheduler {
     # TODO:
     # I need to take advantage of the %options here to
     # control how much looping is done
-    method loop (%options) {
-        logger->line( "scheduler::init" ) if DEBUG;
+    method run (%options) {
+        logger->line( "scheduler::start" ) if DEBUG;
 
         my $run_until_done = !$options{forever};
 

@@ -23,10 +23,6 @@ class Acktor::Dispatcher {
 
     ## ----------------------------------------------------
 
-    method init_ref { $aliases{init} }
-
-    method scheduler { $scheduler }
-
     method lookup ($alias) { $aliases{ $alias } }
 
     ## ----------------------------------------------------
@@ -103,8 +99,8 @@ class Acktor::Dispatcher {
     ## Loop
     ## ----------------------------------------------------
 
-    method loop (%options) {
-        logger->line( "dispatcher::loop" ) if DEBUG;
+    method run (%options) {
+        logger->line( "dispatcher::start" ) if DEBUG;
 
         my $init = delete $options{init} // sub {};
 
@@ -131,9 +127,9 @@ class Acktor::Dispatcher {
         });
 
         try {
-            $scheduler->loop(%options);
+            $scheduler->run(%options);
         } catch ($e) {
-            logger->log( ERROR, "scheduler::loop failed with ($e)" ) if ERROR;
+            logger->log( ERROR, "scheduler::run failed with ($e)" ) if ERROR;
             # TODO: this should trigger the shutdown of the system
         }
 

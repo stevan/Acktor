@@ -63,7 +63,7 @@ sub init ($ctx) {
 my $system = Acktor::System->new;
 isa_ok($system, 'Acktor::System');
 
-$system->loop( init => \&init );
+$system->run( init => \&init );
 
 is($Client::RESPONSE, 20, '... got the expected response');
 

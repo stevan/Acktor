@@ -74,7 +74,7 @@ sub init ($ctx) {
 my $system = Acktor::System->new;
 isa_ok($system, 'Acktor::System');
 
-$system->loop( init => \&init );
+$system->run( init => \&init );
 
 is($Ping::BOUNCES, 5, '... Ping::Ping was called the expected number of times');
 is($Pong::BOUNCES, 5, '... Pong::Pong was called the expected number of times');

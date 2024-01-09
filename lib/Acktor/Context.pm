@@ -12,8 +12,6 @@ class Acktor::Context {
     field $actor_ref;
     field @children;
 
-    method dispatcher { $dispatcher }
-
     method self               { $actor_ref }
     method assign_self ($ref) { $actor_ref = $ref }
 

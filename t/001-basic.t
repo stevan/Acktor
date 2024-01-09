@@ -38,7 +38,7 @@ sub init ($ctx) {
 my $system = Acktor::System->new;
 isa_ok($system, 'Acktor::System');
 
-$system->loop( init => \&init );
+$system->run( init => \&init );
 
 is($Hello::GREETED, 1, '... Hello::Greet was called once');
 

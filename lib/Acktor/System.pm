@@ -14,12 +14,12 @@ class Acktor::System {
         $dispatcher  = Acktor::Dispatcher->new;
     }
 
-    method loop (%options) {
-        logger->line( "system::loop" ) if DEBUG;
+    method run (%options) {
+        logger->line( "system::start" ) if DEBUG;
         try {
-            $dispatcher->loop(%options);
+            $dispatcher->run(%options);
         } catch ($e) {
-            logger->log( ERROR, "dispatcher::loop failed with ($e)" ) if ERROR;
+            logger->log( ERROR, "dispatcher::run failed with ($e)" ) if ERROR;
         }
         logger->line( "system::exit" ) if DEBUG;
     }

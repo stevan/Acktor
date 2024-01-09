@@ -3,9 +3,6 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
-use Acktor::Message;
-use Acktor::Event;
-
 class Acktor::Ref {
     use Acktor::Logging;
 
@@ -22,11 +19,7 @@ class Acktor::Ref {
     method context { $context }
 
     method send ($event) {
-        $context->send(Acktor::Message->new(
-            to   => $self,
-            from => $event->context->self,
-            body => $event
-        ));
+        $context->send( $event );
     }
 
     field $_to_str;

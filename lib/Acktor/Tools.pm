@@ -47,7 +47,7 @@ sub context {
 sub sender {
     # it must at least be defined ...
     my $m = $Acktor::CURRENT_MESSAGE // die 'Cannot call `sender` outside of an active Acktor::Context';
-    return $m->from;
+    return $m->context->self;
 }
 
 sub event ($symbol, @payload) {

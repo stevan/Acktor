@@ -43,6 +43,6 @@ Acktor::Event
 A L<Acktor::Event> can thought of as a deffered method call. The C<$symbol> being
 the name of the method, and the C<$payload> being a list of arguments to the method.
 
-An L<Acktor::Event> is the primary payload of the L<Acktor::Message> object.
+An L<Acktor::Event> is the primary payload of the message pipeline
 
 =cut

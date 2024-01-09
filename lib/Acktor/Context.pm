@@ -32,15 +32,15 @@ class Acktor::Context {
     method lookup ($alias) { $dispatcher->lookup($alias) }
 
     method spawn ($props) {
-        logger->log( DEBUG, "spawn( $props )" ) if DEBUG;
+        logger->log( DEBUG, "$actor_ref -> spawn( $props )" ) if DEBUG;
         my $child_ref = $dispatcher->spawn_actor($props, parent => $self);
         push @children => $child_ref;
         return $child_ref;
     }
 
-    method send ($message) {
-        logger->log( DEBUG, "send( $message )" ) if DEBUG;
-        $dispatcher->dispatch($message);
+    method send ($event) {
+        logger->log( DEBUG, "$actor_ref -> send( $event )" ) if DEBUG;
+        $dispatcher->dispatch( $actor_ref, $event );
     }
 
     # ...

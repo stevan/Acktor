@@ -8,7 +8,7 @@ class Acktor {
     our $CURRENT_MESSAGE;
 
     method receive ($ctx, $message) {
-        my $method = $message->body->symbol;
+        my $method = $message->symbol;
         my $ref    = $self->can( $method );
 
         die "Method ($method) not found in ($self)" unless $ref;
@@ -16,7 +16,7 @@ class Acktor {
         local $CURRENT_CONTEXT = $ctx;
         local $CURRENT_MESSAGE = $message;
 
-        $self->$ref( $message->body->payload->@* );
+        $self->$ref( $message->payload->@* );
     }
 }
 

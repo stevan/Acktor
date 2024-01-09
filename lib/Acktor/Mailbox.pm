@@ -18,8 +18,6 @@ class Acktor::Mailbox {
 
     method owner { $actor_ref }
 
-    method address { $actor_ref->context->dispatcher->address }
-
     # ... signals
 
     method all_signals    {           @signals }

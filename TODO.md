@@ -1,45 +1,3 @@
-
-
-```
-
-class Dispatcher {
-    has $scheduler;
-
-    method dispatch($to, $event) {
-        $scheduler->mailbox_for($to)->enqueue_message($event);
-    }
-}
-
-
-class Scheduler {
-    has %mailboxes;
-
-    method mailbox_for($ref) { $mailboxes{ $ref->pid } }
-}
-
-
-class Mailbox {
-    has $status :(READY, WAITING);
-
-
-    method enqueue_message ($event) {
-        # ...
-        $status = READY;
-    }
-}
-
-```
-
-
-
-
-
-
-
-
-
-
-
 # TODO
 
 - stop sequence
@@ -88,8 +46,8 @@ System
                 <Actor>
                 @Messages
                 Ref
+                    Props
                     Context
-                        Props
                         >Dispatcher
                         >Ref
                         >>(parent/children)

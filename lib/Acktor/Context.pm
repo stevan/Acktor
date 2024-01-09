@@ -36,9 +36,9 @@ class Acktor::Context {
         return $child_ref;
     }
 
-    method send ($event) {
-        logger->log( DEBUG, "$actor_ref -> send( $event )" ) if DEBUG;
-        $dispatcher->dispatch( $actor_ref, $event );
+    method send ($to, $event) {
+        logger->log( DEBUG, "$to -> send( $event )" ) if DEBUG;
+        $dispatcher->dispatch( $to, $event );
     }
 
     # ...

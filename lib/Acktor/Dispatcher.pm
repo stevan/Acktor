@@ -14,19 +14,11 @@ use Acktor::System::Init;
 class Acktor::Dispatcher {
     use Acktor::Logging;
 
-    field $address;
     field $scheduler;
     field %aliases;
 
     ADJUST {
         $scheduler = Acktor::Scheduler->new;
-    }
-
-    ## ----------------------------------------------------
-
-    method address {
-        state $ADDR_SEQ = 0;
-        $address //= sprintf '%04d@%s' => ++$ADDR_SEQ, 'local';
     }
 
     ## ----------------------------------------------------
@@ -41,28 +33,16 @@ class Acktor::Dispatcher {
     ## Spawn
     ## ----------------------------------------------------
 
-    my sub new_pid ($props) {
-        state $PID_SEQ = 0;
-        sprintf '%04d:%s' => ++$PID_SEQ, $props->class
-    }
-
-    method _build_actor_ref ($props, %options) {
+    method spawn_actor ($props, %options) {
         my $parent = $options{parent};
 
-        return Acktor::Ref->new(
+        my $actor_ref = Acktor::Ref->new(
             props   => $props,
-            pid     => new_pid($props),
             context => Acktor::Context->new(
                 dispatcher => $self,
                 ($parent ? (parent  => $parent) :()),
             )
         );
-    }
-
-    # ...
-
-    method spawn_actor ($props, %options) {
-        my $actor_ref = $self->_build_actor_ref($props, %options);
 
         # TODO: add try/catch to catch anything throwm by Mailbox::new and rethrow a reasonable error
         $scheduler->register( $actor_ref, Acktor::Mailbox->new( actor_ref => $actor_ref ) );

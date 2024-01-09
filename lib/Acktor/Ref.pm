@@ -10,23 +10,28 @@ class Acktor::Ref {
 
     field $props   :param;
     field $context :param;
-    field $pid     :param;
+
+    field $pid;
 
     ADJUST {
         $context->assign_self($self);
     }
 
     method props   { $props   }
-    method pid     { $pid     }
     method context { $context }
 
+    method pid {
+        state $PID_SEQ = 0;
+        $pid //= sprintf '%04d:%s' => ++$PID_SEQ, $props->class;
+    }
+
     method send ($event) {
-        $context->send( $event );
+        $context->send( $self, $event );
     }
 
     field $_to_str;
     method to_string {
-        $_to_str //= sprintf 'Ref[ %s ]' => $pid;
+        $_to_str //= sprintf 'Ref[ %s ]' => $self->pid;
     }
 
 }

@@ -15,27 +15,25 @@ class Acktor::Scheduler {
     # ...
 
     method register ($ref, $mailbox) {
-        $mailboxes{ $ref->pid } = $mailbox;
+        $mailboxes{ refaddr $ref } = $mailbox;
     }
 
     method deregister ($ref) {
-        delete $mailboxes{ $ref->pid };
+        delete $mailboxes{ refaddr $ref };
     }
 
     method suspend ($ref) {
-        $mailboxes{ $ref->pid }->stop;
+        $mailboxes{ refaddr $ref }->stop;
     }
 
     # ...
 
     method schedule_message ($to, $event) {
-        my $m = $mailboxes{ $to->pid };
-        if (!$m or $m->is_stopped) {
-            push @deadletters => [ $to, $event ];
-        }
-        else {
+        if ( my $m = $mailboxes{ refaddr $to } ) {
             $m->enqueue_message( $event );
             $to_be_run{ refaddr $m } //= $m;
+        } else {
+            push @deadletters => [ $to, $event ];
         }
     }
 

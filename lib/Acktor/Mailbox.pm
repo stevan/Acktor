@@ -38,17 +38,11 @@ class Acktor::Mailbox {
     method all_messages    {           @messages }
     method has_messages    { !! scalar @messages }
     method enqueue_message ($message) {
-        if ($self->is_stopped) {
+        if ($state == $STOPPED) {
             push @deadletters => $message;
-        } else {
-            push @messages => $message;
+            return;
         }
-    }
-
-    method drain_messages {
-        my @msgs  = @messages;
-        @messages = ();
-        return @msgs;
+        push @messages => $message;
     }
 
     # ... tick
@@ -57,22 +51,25 @@ class Acktor::Mailbox {
         logger->log( DEBUG, "tick for $actor_ref" ) if DEBUG;
 
         if (@messages) {
-            my @msgs = $self->drain_messages;
+            my @msgs  = @messages;
+            @messages = ();
+
+            my $context = $actor_ref->context;
             while (@msgs) {
+                if ($state == $STOPPED) {
+                    push @deadletters => @msgs;
+                    return;
+                }
+
                 my $message = shift @msgs;
                 try {
-                    $actor->receive($actor_ref->context, $message);
+                    $actor->receive($context, $message);
                 } catch ($e) {
                     logger->log( ERROR, "actor::receive($message) failed with ($e)" ) if ERROR;
                     # TODO: decide how to handle this:
                     #       - resume
                     #       - restart
                     #       - stop permanently (ctx->exit/despawn)
-                }
-                if ($self->is_stopped) {
-                    push @deadletters => @msgs;
-                    # TODO : run POST_STOP on the actor
-                    return;
                 }
             }
         }

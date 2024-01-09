@@ -43,7 +43,7 @@ class Acktor::Context {
         logger->log( DEBUG, "stop( $ref )" ) if DEBUG;
         $dispatcher->despawn_actor( $ref );
         # remove this if it is one of our children ,,.
-        @children = grep { $_->pid ne $child->pid } @children;
+        @children = grep { $_->pid ne $ref->pid } @children;
     }
 
 }

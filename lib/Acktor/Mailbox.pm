@@ -38,7 +38,11 @@ class Acktor::Mailbox {
     method all_messages    {           @messages }
     method has_messages    { !! scalar @messages }
     method enqueue_message ($message) {
-        push @messages => $message;
+        if ($self->is_stopped) {
+            push @deadletters => $message;
+        } else {
+            push @messages => $message;
+        }
     }
 
     method drain_messages {

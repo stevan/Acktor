@@ -6,18 +6,14 @@ use builtin      qw[ blessed refaddr true false ];
 class Acktor::Mailbox {
     use Acktor::Logging;
 
-    my $WAITING = 0;
-    my $STOPPED = 1;
-
     field $actor_ref :param;
 
-    field $state;
     field $actor;
     field @messages;
     field @deadletters;
+    field $stopped = false;
 
     ADJUST {
-        $state = $WAITING;
         $actor = $actor_ref->props->new_actor;
     }
 
@@ -25,11 +21,11 @@ class Acktor::Mailbox {
 
     # ...
 
-    method resume { $state = $WAITING }
-    method stop   { $state = $STOPPED }
+    method resume { $stopped = false }
+    method stop   { $stopped = true  }
 
-    method is_stopped { $state == $STOPPED }
-    method is_waiting { $state == $WAITING }
+    method is_stopped {  $stopped }
+    method is_waiting { !$stopped }
 
     # ... messages
 
@@ -38,7 +34,7 @@ class Acktor::Mailbox {
     method all_messages    {           @messages }
     method has_messages    { !! scalar @messages }
     method enqueue_message ($message) {
-        if ($state == $STOPPED) {
+        if ($stopped) {
             push @deadletters => $message;
             return;
         }
@@ -56,7 +52,7 @@ class Acktor::Mailbox {
 
             my $context = $actor_ref->context;
             while (@msgs) {
-                if ($state == $STOPPED) {
+                if ($stopped) {
                     push @deadletters => @msgs;
                     return;
                 }

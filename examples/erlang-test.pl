@@ -50,7 +50,7 @@ sub init ($ctx) {
 
 my $system = Acktor::System->new;
 
-$system->loop( init => \&init );
+$system->run( init => \&init );
 
 say "Message: ".(time() - $MSG_START);
 say "Runtime: ".(time() - $START);

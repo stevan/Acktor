@@ -7,9 +7,12 @@ class Acktor::Scheduler {
     use Acktor::Logging;
 
     field %mailboxes;
+    field @deadletters;
 
     field @to_be_run;
     field %to_be_run;
+
+    # ...
 
     method register ($ref, $mailbox) {
         $mailboxes{ $ref->pid } = $mailbox;
@@ -19,21 +22,28 @@ class Acktor::Scheduler {
         delete $mailboxes{ $ref->pid };
     }
 
-    method schedule_message ($to, $event) {
-        my $m = $mailboxes{ $to->pid };
-        $m->enqueue_message( $event );
-        $to_be_run{ refaddr $m } //= $m;
+    method suspend ($ref) {
+        $mailboxes{ $ref->pid }->stop;
     }
 
-    method schedule_signal ($signal) {
-        my $m = $mailboxes{ $signal->to->pid };
-        $m->enqueue_signal( $signal );
-        $to_be_run{ refaddr $m } //= $m;
+    # ...
+
+    method schedule_message ($to, $event) {
+        my $m = $mailboxes{ $to->pid };
+        if (!$m or $m->is_stopped) {
+            push @deadletters => [ $to, $event ];
+        }
+        else {
+            $m->enqueue_message( $event );
+            $to_be_run{ refaddr $m } //= $m;
+        }
     }
 
     method schedule_callback ($f) {
         push @to_be_run => $f;
     }
+
+    # ...
 
     method tick {
         my @to_run;

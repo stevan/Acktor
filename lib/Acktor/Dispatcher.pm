@@ -63,7 +63,31 @@ class Acktor::Dispatcher {
             delete $aliases{ $alias };
         }
 
-        $scheduler->deregister( $actor_ref );
+        $scheduler->suspend( $actor_ref );
+
+        my $context = $actor_ref->context;
+
+        if ( my @children = $context->all_children ) {
+            $scheduler->schedule_callback(sub {
+                logger->log( DEBUG, "despawn_actor( $actor_ref ) stop children" ) if DEBUG;
+                $context->stop( $_ ) foreach @children;
+
+                $scheduler->schedule_callback(sub {
+                    logger->log( DEBUG, "despawn_actor( $actor_ref ) deregister after stopping children" ) if DEBUG;
+                    # TODO: this should actually happen after
+                    # the stop($child) calls completely resolove
+                    # but we do not have that capability yet, so
+                    # this will have to suffice
+                    $scheduler->deregister( $actor_ref );
+                });
+            });
+        }
+        else {
+            $scheduler->schedule_callback(sub {
+                logger->log( DEBUG, "despawn_actor( $actor_ref ) deregister" ) if DEBUG;
+                $scheduler->deregister( $actor_ref );
+            });
+        }
     }
 
     ## ----------------------------------------------------
@@ -73,11 +97,6 @@ class Acktor::Dispatcher {
     method dispatch ($to, $event) {
         logger->log( DEBUG, "dispatch( $to, $event )" ) if DEBUG;
         $scheduler->schedule_message( $to, $event );
-    }
-
-    method signal ($signal) {
-        logger->log( DEBUG, "signal( $signal )" ) if DEBUG;
-        $scheduler->schedule_signal( $signal );
     }
 
     ## ----------------------------------------------------

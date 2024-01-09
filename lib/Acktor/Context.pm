@@ -3,8 +3,6 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
-use Acktor::System::Signal;
-
 class Acktor::Context {
     use Acktor::Logging;
 
@@ -41,37 +39,11 @@ class Acktor::Context {
         $dispatcher->dispatch( $to, $event );
     }
 
-    # ...
-
-    method stop ($child) {
-        my $count = scalar @children;
+    method stop ($ref) {
+        logger->log( DEBUG, "stop( $ref )" ) if DEBUG;
+        $dispatcher->despawn_actor( $ref );
+        # remove this if it is one of our children ,,.
         @children = grep { $_->pid ne $child->pid } @children;
-
-        if ($count == scalar @children) {
-            die "child($child) is not a Child of this context";
-        }
-
-        # TODO - make this better
-        $dispatcher->signal(
-            Acktor::System::Signal::PoisonPill->new(
-                to   => $child,
-                from => $actor_ref
-            )
-        );
-    }
-
-    method exit {
-        foreach my $child (@children) {
-            $self->stop($child);
-        }
-
-        # TODO - make this better
-        $dispatcher->signal(
-            Acktor::System::Signal::PoisonPill->new(
-                to   => $actor_ref,
-                from => $actor_ref
-            )
-        );
     }
 
 }

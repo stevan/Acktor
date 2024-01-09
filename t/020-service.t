@@ -35,7 +35,7 @@ class Client :isa(Acktor) {
         unless ($service) {
             $service = context->lookup('service');
             isa_ok($service, 'Acktor::Ref');
-            is($service->context->props->class, 'Service', '... the Actor lookup gave us the expected class');
+            is($service->props->class, 'Service', '... the Actor lookup gave us the expected class');
         }
         $service->send( event *Service::Request => ( $op, $x, $y ) );
     }
@@ -50,12 +50,12 @@ sub init ($ctx) {
     my $Service = spawn( actor_of(*Service::, alias => 'service'));
 
     isa_ok($Service, 'Acktor::Ref');
-    is($Service->context->props->class, 'Service', '... the Actor is of the expected class');
+    is($Service->props->class, 'Service', '... the Actor is of the expected class');
 
     my $Client  = spawn( actor_of(*Client:: ));
 
     isa_ok($Client, 'Acktor::Ref');
-    is($Client->context->props->class, 'Client', '... the Actor is of the expected class');
+    is($Client->props->class, 'Client', '... the Actor is of the expected class');
 
     $Client->send( event *Client::Call => add => 10, 10 );
 }

@@ -6,18 +6,34 @@ use builtin      qw[ blessed refaddr true false ];
 class Acktor::Scheduler {
     use Acktor::Logging;
 
+    field %mailboxes;
+
     field @to_be_run;
     field %to_be_run;
 
-    method schedule ($mailbox) {
-        $to_be_run{ refaddr $mailbox } = $mailbox;
+    method register ($ref, $mailbox) {
+        $mailboxes{ $ref->pid } = $mailbox;
     }
 
-    method unschedule ($mailbox) {
-        delete $to_be_run{ refaddr $mailbox };
+    method deregister ($ref) {
+        delete $mailboxes{ $ref->pid };
     }
 
-    method next_tick ($f) { push @to_be_run => $f }
+    method schedule_message ($to, $event) {
+        my $m = $mailboxes{ $to->pid };
+        $m->enqueue_message( $event );
+        $to_be_run{ refaddr $m } //= $m;
+    }
+
+    method schedule_signal ($signal) {
+        my $m = $mailboxes{ $signal->to->pid };
+        $m->enqueue_signal( $signal );
+        $to_be_run{ refaddr $m } //= $m;
+    }
+
+    method schedule_callback ($f) {
+        push @to_be_run => $f;
+    }
 
     method tick {
         my @to_run;

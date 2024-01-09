@@ -8,14 +8,12 @@ use Acktor::System::Signal;
 class Acktor::Context {
     use Acktor::Logging;
 
-    field $props      :param;
     field $dispatcher :param;
     field $parent     :param = undef;
 
     field $actor_ref;
     field @children;
 
-    method props      { $props      }
     method dispatcher { $dispatcher }
 
     method self               { $actor_ref }

@@ -13,7 +13,7 @@ class Acktor::Mailbox {
     field @messages;
 
     ADJUST {
-        $actor = $actor_ref->context->props->new_actor;
+        $actor = $actor_ref->props->new_actor;
     }
 
     method owner { $actor_ref }

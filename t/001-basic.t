@@ -30,7 +30,7 @@ class Hello :isa(Acktor) {
 sub init ($ctx) {
     my $hello = spawn( actor_of *Hello:: );
     isa_ok($hello, 'Acktor::Ref');
-    is($hello->context->props->class, 'Hello', '... the Actor is of the expected class');
+    is($hello->props->class, 'Hello', '... the Actor is of the expected class');
 
     $hello->send( event *Hello::Greet => "World" );
 }

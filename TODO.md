@@ -1,3 +1,45 @@
+
+
+```
+
+class Dispatcher {
+    has $scheduler;
+
+    method dispatch($to, $event) {
+        $scheduler->mailbox_for($to)->enqueue_message($event);
+    }
+}
+
+
+class Scheduler {
+    has %mailboxes;
+
+    method mailbox_for($ref) { $mailboxes{ $ref->pid } }
+}
+
+
+class Mailbox {
+    has $status :(READY, WAITING);
+
+
+    method enqueue_message ($event) {
+        # ...
+        $status = READY;
+    }
+}
+
+```
+
+
+
+
+
+
+
+
+
+
+
 # TODO
 
 - stop sequence
@@ -40,25 +82,17 @@ Legend:
 
 
 System
-    PostOffice <!------------------------------+
-        %Registered                            |
-            >Dispatcher                        |
-        @Letters                               |
---------------------------------------------(socket)------- [ fork() ]
-    Dispatcher                                 |
-        %Mailboxes                             |
-            MailBox                            |
-                <Actor>                        |
-                @Messages                      |
-                Ref                            |
-                    Context                    |
-                        Props                  |
-                        >Dispatcher            |
-                        >Ref                   |
-                        >>(parent/children)    |
-        >PostOffice <!-------------------------+
+    Dispatcher
         Scheduler
-            @Functions
-            @Mailboxes
+            %MailBox
+                <Actor>
+                @Messages
+                Ref
+                    Context
+                        Props
+                        >Dispatcher
+                        >Ref
+                        >>(parent/children)
+
 
 ```

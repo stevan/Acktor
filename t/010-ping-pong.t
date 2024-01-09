@@ -24,7 +24,7 @@ class Pong :isa(Acktor) {
     method Start {
         $ping = sender;
         isa_ok($ping, 'Acktor::Ref');
-        is($ping->context->props->class, 'Ping', '... the Actor is of the expected class');
+        is($ping->props->class, 'Ping', '... the Actor is of the expected class');
 
         $ping->send( event *Ping::Ping, 0 );
     }
@@ -46,7 +46,7 @@ class Ping :isa(Acktor) {
     method Start {
         $pong = spawn( actor_of Pong:: );
         isa_ok($pong, 'Acktor::Ref');
-        is($pong->context->props->class, 'Pong', '... the Actor is of the expected class');
+        is($pong->props->class, 'Pong', '... the Actor is of the expected class');
 
         $pong->send( event *Pong::Start );
     }
@@ -66,7 +66,7 @@ class Ping :isa(Acktor) {
 sub init ($ctx) {
     my $Ping = spawn( actor_of *Ping::, ( max_bounce => 5 ) );
     isa_ok($Ping, 'Acktor::Ref');
-    is($Ping->context->props->class, 'Ping', '... the Actor is of the expected class');
+    is($Ping->props->class, 'Ping', '... the Actor is of the expected class');
 
     $Ping->send( event *Ping::Start );
 }

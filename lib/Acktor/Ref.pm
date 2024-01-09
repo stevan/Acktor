@@ -8,6 +8,7 @@ class Acktor::Ref {
 
     use if LOG_LEVEL, 'overload' => '""' => \&to_string;
 
+    field $props   :param;
     field $context :param;
     field $pid     :param;
 
@@ -15,6 +16,7 @@ class Acktor::Ref {
         $context->assign_self($self);
     }
 
+    method props   { $props   }
     method pid     { $pid     }
     method context { $context }
 

@@ -54,10 +54,7 @@ class Acktor::Mailbox {
         logger->log( DEBUG, "tick for $actor_ref" ) if DEBUG;
 
         if (@signals) {
-            my @sigs = $self->drain_signals;
-            while (@sigs) {
-                my $signal = shift @sigs;
-
+            foreach my $signal ($self->drain_signals) {
                 # TODO:
                 # this could be much better ...
                 if ($signal isa Acktor::System::Signal::PoisonPill) {
@@ -69,9 +66,7 @@ class Acktor::Mailbox {
         }
 
         if (@messages) {
-            my @msgs = $self->drain_messages;
-            while (@msgs) {
-                my $message = shift @msgs;
+            foreach my $message ($self->drain_messages) {
                 try {
                     $actor->receive($actor_ref->context, $message);
                 } catch ($e) {

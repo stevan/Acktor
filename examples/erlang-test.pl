@@ -44,7 +44,8 @@ sub init ($ctx) {
     $MSG_START = time();
     say "Process: ".($MSG_START - $START);
 
-    $t->send( event *ErlangTest::Ping => 0 ) foreach 1 .. $NUM_MESSAGES;
+    my $first = event *ErlangTest::Ping => 0;
+    $t->send( $first ) foreach 1 .. $NUM_MESSAGES;
 }
 
 my $system = Acktor::System->new;

@@ -1,8 +1,7 @@
 # TODO
 
-- stop sequence
-    - https://getakka.net/articles/actors/receive-actor-api.html#stopping-actors
-
+- Make a distributed Hash Table
+    - https://www.youtube.com/watch?v=1QdKhNpsj8M&ab_channel=number0
 
 # TO ADD
 
@@ -35,13 +34,13 @@ Legend:
    @ = list of objects
    > = circular reference
   >> = many circular refs
-  <! = I/O watcher
 <..> = The code you write
 
 
 System
     Dispatcher
         Scheduler
+            @Callbacks
             %MailBox
                 <Actor>
                 @Messages

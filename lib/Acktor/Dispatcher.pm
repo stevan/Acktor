@@ -29,14 +29,12 @@ class Acktor::Dispatcher {
     ## Spawn
     ## ----------------------------------------------------
 
-    method spawn_actor ($props, %options) {
-        my $parent = $options{parent};
+    method spawn_actor ($props) {
 
         my $actor_ref = Acktor::Ref->new(
             props   => $props,
             context => Acktor::Context->new(
                 dispatcher => $self,
-                ($parent ? (parent  => $parent) :()),
             )
         );
 
@@ -52,7 +50,7 @@ class Acktor::Dispatcher {
         return $actor_ref;
     }
 
-    method despawn_actor ($actor_ref, %options) {
+    method despawn_actor ($actor_ref) {
         logger->log( DEBUG, "despawn_actor( $actor_ref )" ) if DEBUG;
 
         if ( my $alias = $actor_ref->props->alias ) {

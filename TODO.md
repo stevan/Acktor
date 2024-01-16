@@ -1,3 +1,29 @@
+Node1 = perl start-note.pl --at 3000
+Node2 = perl start-node.pl --at 3001 --connect 3000
+
+Node2
+    - connects to Node1
+
+Node1
+    - accepts connection from Node2
+        - sends WelcomeMessage to Node2
+
+Node2
+    - reads WelcomeMessage
+        - sends WelcomeResponse to Node1
+
+Node1
+    - reach WelcomeResponse
+        - sends WelcomeRepsonse to Node2
+
+WelcomeMessage
+    - container sender for response
+
+WelcomeResponse
+    - contains list of important PIDs and their addresses
+
+
+
 # TODO
 
 - Make a distributed Hash Table

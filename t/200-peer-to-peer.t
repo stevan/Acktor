@@ -9,24 +9,35 @@ use Data::Dumper;
 use Acktor::Node;
 use Acktor::Node::ClientConnection;
 
-my $node1 = Acktor::Node->new;
-$node1->listen('0.0.0.0', 3000);
+if (my $pid = fork()) {
+    say "FORKED $pid";
+    my $node1 = Acktor::Node->new;
+    $node1->listen('0.0.0.0', 3000);
 
-my $node2 = Acktor::Node->new;
-$node2->listen('0.0.0.0', 3001);
+    my $conn1 = $node1->connect(
+        '0.0.0.0', 3001,
+        Acktor::Node::ClientConnection->new
+    );
 
-my $conn1 = $node1->connect(
-    '0.0.0.0', 3001,
-    Acktor::Node::ClientConnection->new
-);
+    foreach (0 .. 10) {
+        $node1->tick(3);
+    }
 
-my $conn2 = $node2->connect(
-    '0.0.0.0', 3000,
-    Acktor::Node::ClientConnection->new
-);
+    waitpid($pid, 0);
+}
+else {
+    say "FORKED Child";
+    my $node2 = Acktor::Node->new;
+    $node2->listen('0.0.0.0', 3001);
 
-foreach (0 .. 10) {
-    $node1->tick(3);
-    $node2->tick(3);
+    my $conn2 = $node2->connect(
+        '0.0.0.0', 3000,
+        Acktor::Node::ClientConnection->new
+    );
+
+    foreach (0 .. 10) {
+        $node2->tick(3);
+    }
+    exit();
 }
 

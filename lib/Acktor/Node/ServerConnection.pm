@@ -17,7 +17,7 @@ class Acktor::Node::ServerConnection {
         if ($mode eq 'w') {
             unless ($waiting) {
                 logger->log( INFO, "Sending message from server") if INFO;
-                $socket->send('Hello from Server: '.(join ":" => $socket->sockhost, $socket->sockport));
+                $socket->send("Hello from [$$] Server: ".(join ":" => $socket->sockhost, $socket->sockport));
                 $waiting = true;
             }
         }
@@ -26,7 +26,7 @@ class Acktor::Node::ServerConnection {
                 my $buffer = '';
                 $socket->recv($buffer, 1024);
                 if (length $buffer) {
-                    logger->log( INFO, "Got ($buffer) from Client" ) if INFO;
+                    logger->log( INFO, "Got ($buffer) on Server[$$] from Client" ) if INFO;
                     $waiting = false;
                 }
             }

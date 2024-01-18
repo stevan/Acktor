@@ -6,7 +6,24 @@ use builtin      qw[ blessed refaddr true false ];
 class Acktor::Node::ClientConnection {
     use Acktor::Logging;
 
-    field $waiting = true;
+    field @input;
+    field @output;
+
+    ADJUST {
+        push @output => 'Hello';
+    }
+
+    method input  { @input  }
+    method output { @output }
+
+    method to_write ($data) {
+        push @output => $data;
+    }
+
+    method get_input {
+        return unless @input;
+        pop @input;
+    }
 
     method handle ($socket, $mode, $node) {
         logger->log( DEBUG, "Got ($mode) event for ClientConnection: "
@@ -15,20 +32,18 @@ class Acktor::Node::ClientConnection {
                 . (join ":" => $socket->peerhost, $socket->peerport)) if DEBUG;
 
         if ($mode eq 'r') {
-            if ($waiting) {
-                my $buffer = '';
-                $socket->recv($buffer, 1024);
-                if (length $buffer) {
-                    logger->log( INFO, "Got ($buffer) on [$$] Client from Server" ) if INFO;
-                    $waiting = false;
-                }
+            my $buffer = '';
+            $socket->recv($buffer, 1024);
+            if (length $buffer) {
+                logger->log( INFO, "Got ($buffer) on [$$] Client from Server" ) if INFO;
+                push @input => $buffer;
             }
         }
         elsif ($mode eq 'w') {
-            unless ($waiting) {
-                logger->log( INFO, "Sending message from Client" ) if INFO;
-                $socket->send("Hello from [$$] Client: ".(join ":" => $socket->sockhost, $socket->sockport));
-                $waiting = true;
+            if (@output) {
+                my $msg = pop @output;
+                logger->log( INFO, "Sending '$msg' message from Client" ) if INFO;
+                $socket->send("'$msg' from [$$] Client: ".(join ":" => $socket->sockhost, $socket->sockport));
             }
         }
     }

@@ -18,6 +18,11 @@ my $conn2 = $node2->connect(
     Acktor::Node::ClientConnection->new
 );
 
+my $conn2b = $node2->connect(
+    '0.0.0.0', 3000,
+    Acktor::Node::ClientConnection->new
+);
+
 foreach (0 .. 10) {
     say '-('.$$.' = '.$_.')-------------------------------';
     $node2->tick(3);

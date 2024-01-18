@@ -35,7 +35,7 @@ class Acktor::Node::ServerConnection {
             my $buffer = '';
             $socket->recv($buffer, 1024);
             if (length $buffer) {
-                logger->log( INFO, "Got ($buffer) on [$$] Server from Client" ) if INFO;
+                logger->log( INFO, "Got ($buffer) on Server from Client" ) if INFO;
                 push @input => $buffer;
             }
         }
@@ -43,7 +43,7 @@ class Acktor::Node::ServerConnection {
             if (@output) {
                 my $msg = pop @output;
                 logger->log( INFO, "Sending '$msg' message from Server" ) if INFO;
-                $socket->send("'$msg' from [$$] Server: ".(join ":" => $socket->sockhost, $socket->sockport));
+                $socket->send("'$msg' from Server: ".(join ":" => $socket->sockhost, $socket->sockport));
             }
         }
 

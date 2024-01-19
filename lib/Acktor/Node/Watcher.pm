@@ -5,7 +5,7 @@ use builtin      qw[ blessed refaddr true false ];
 
 class Acktor::Node::Watcher {
 
-    field $reading  = false;
+    field $reading = false;
     field $writing = false;
 
     method is_reading :lvalue { $reading }

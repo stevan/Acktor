@@ -3,13 +3,21 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
+use Acktor::Node::BufferedReader;
+use Acktor::Node::BufferedWriter;
+
 class Acktor::Node::ServerConnection :isa(Acktor::Node::Watcher) {
     use Acktor::Logging;
 
-    field @input;
-    field @output;
-
     field $socket :param;
+
+    field $reader;
+    field $writer;
+
+    ADJUST {
+        $reader = Acktor::Node::BufferedReader->new;
+        $writer = Acktor::Node::BufferedWriter->new;
+    }
 
     method socket { $socket }
 
@@ -23,7 +31,7 @@ class Acktor::Node::ServerConnection :isa(Acktor::Node::Watcher) {
 
     method to_write ($data) {
         $self->is_writing = true;
-        push @output => $data;
+        $writer->push_messages($data);
     }
 
     method handle_read ($node) {
@@ -32,13 +40,11 @@ class Acktor::Node::ServerConnection :isa(Acktor::Node::Watcher) {
                 . " connected to ClientConnection: "
                 . $self->peer_address) if DEBUG;
 
-        my $buffer = '';
-        $socket->recv($buffer, 1024);
-        if (length $buffer) {
-            logger->log( INFO, "Got ($buffer) on Server from Client" ) if INFO;
-            push @input => $buffer;
+        if ($reader->read( $socket )) {
+            my ($message) = $reader->fetch_messages;
+            logger->log( INFO, "Got ($message) on Server from Client" ) if INFO;
             logger->log( INFO, "Responding from Server to Client" ) if INFO;
-            $self->to_write('Hello');
+            $self->to_write($message);
         }
     }
 
@@ -48,14 +54,7 @@ class Acktor::Node::ServerConnection :isa(Acktor::Node::Watcher) {
                 . " connected to ClientConnection: "
                 . $self->peer_address) if DEBUG;
 
-        # flush them all
-        while (@output) {
-            my $msg = pop @output;
-            logger->log( INFO, "Sending '$msg' message from Server" ) if INFO;
-            $socket->send("'$msg' from Server: ".$self->address);
-        }
-
-        $self->is_writing = false;
+        $self->is_writing = $writer->write( $socket );
     }
 
 }

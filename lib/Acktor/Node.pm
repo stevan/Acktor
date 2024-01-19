@@ -37,6 +37,7 @@ class Acktor::Node {
         @watchers = grep { refaddr $watcher != refaddr $_ } @watchers;
     }
 
+    # TODO: move this to the Scheduler
     method tick ($timeout) {
         local $! = 0;
 

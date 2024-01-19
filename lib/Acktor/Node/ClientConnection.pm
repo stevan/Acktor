@@ -3,16 +3,24 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
+use Acktor::Node::BufferedReader;
+use Acktor::Node::BufferedWriter;
+
 class Acktor::Node::ClientConnection :isa(Acktor::Node::Watcher) {
     use Acktor::Logging;
-
-    field @input;
-    field @output;
 
     field $host :param;
     field $port :param;
 
     field $socket;
+
+    field $reader;
+    field $writer;
+
+    ADJUST {
+        $reader = Acktor::Node::BufferedReader->new;
+        $writer = Acktor::Node::BufferedWriter->new;
+    }
 
     method socket { $socket }
 
@@ -32,7 +40,7 @@ class Acktor::Node::ClientConnection :isa(Acktor::Node::Watcher) {
 
     method to_write ($data) {
         $self->is_writing = true;
-        push @output => $data;
+        $writer->push_messages($data);
     }
 
     method handle_read ($node) {
@@ -41,11 +49,9 @@ class Acktor::Node::ClientConnection :isa(Acktor::Node::Watcher) {
                 . " connected to ServerConnection: "
                 . $self->peer_address) if DEBUG;
 
-        my $buffer = '';
-        $socket->recv($buffer, 1024);
-        if (length $buffer) {
-            logger->log( INFO, "Got ($buffer) on [$$] Client from Server" ) if INFO;
-            push @input => $buffer;
+        if ($reader->read( $socket )) {
+            my @messages = $reader->fetch_messages;
+            logger->log( INFO, "Got (".(join ', ' => @messages).") to Client from Server" ) if INFO;
         }
     }
 
@@ -55,14 +61,7 @@ class Acktor::Node::ClientConnection :isa(Acktor::Node::Watcher) {
                 . " connected to ServerConnection: "
                 . $self->peer_address) if DEBUG;
 
-        # flush them all
-        while (@output) {
-            my $msg = pop @output;
-            logger->log( INFO, "Sending '$msg' message from Client" ) if INFO;
-            $socket->send("'$msg' from [$$] Client: ".$self->address);
-        }
-
-        $self->is_writing = false;
+        $self->is_writing = $writer->write( $socket );
     }
 
 }

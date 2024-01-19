@@ -5,24 +5,46 @@ use builtin      qw[ blessed refaddr true false ];
 
 use Acktor::Node::ServerConnection;
 
-class Acktor::Node::Listener {
+class Acktor::Node::Listener :isa(Acktor::Node::Watcher) {
     use Acktor::Logging;
 
-    method handle ($socket, $mode, $node) {
-        logger->log( DEBUG, "Got ($mode) event for Listener: "
+    use IO::Socket;
+    use IO::Socket::INET;
+
+    field $host :param;
+    field $port :param;
+
+    field $socket;
+
+    method socket { $socket }
+
+    method init_socket {
+        die 'Cannot call create_socket once' if $socket;
+
+        $socket = IO::Socket::INET->new(
+            Listen    => SOMAXCONN,
+            LocalAddr => $host,
+            LocalPort => $port,
+            Proto     => 'tcp',
+            ReuseAddr => 1,
+        ) or die "Failed to create listen port at $port: $!";
+
+        $socket->autoflush(1);
+        $socket->blocking(0);
+
+        $self->is_reading = true;
+    }
+
+    method handle_read ($node) {
+        logger->log( DEBUG, "Got read event for Listener: "
                 . join ":" => $socket->sockhost, $socket->sockport ) if DEBUG;
 
         my $conn = $socket->accept;
 
-        $conn->autoflush(1);
-        $conn->blocking(0);
-
         logger->log( INFO, "Adding new ServerConnection" ) if INFO;
-
-        $node->add_watcher(
-            $conn, 'rw',
-            Acktor::Node::ServerConnection->new
-        );
+        my $server = Acktor::Node::ServerConnection->new( socket => $conn );
+        $server->init_socket;
+        $node->add_watcher( $server );
     }
 
 }

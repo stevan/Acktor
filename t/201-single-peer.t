@@ -13,15 +13,9 @@ use Acktor::Node::ClientConnection;
 my $node2 = Acktor::Node->new;
 $node2->listen('0.0.0.0', 3000);
 
-my $conn2 = $node2->connect(
-    '0.0.0.0', 3000,
-    Acktor::Node::ClientConnection->new
-);
+my $conn2 = $node2->connect( '0.0.0.0', 3000 );
 
-my $conn2b = $node2->connect(
-    '0.0.0.0', 3000,
-    Acktor::Node::ClientConnection->new
-);
+$conn2->to_write('Hello');
 
 foreach (0 .. 10) {
     say '-('.$$.' = '.$_.')-------------------------------';

@@ -21,24 +21,16 @@ class Acktor::Node::ServerConnection :isa(Acktor::Node::Watcher) {
         $self->is_writing = false;
     }
 
-    method input  { @input  }
-    method output { @output }
-
     method to_write ($data) {
         $self->is_writing = true;
         push @output => $data;
     }
 
-    method get_input {
-        return unless @input;
-        pop @input;
-    }
-
     method handle_read ($node) {
         logger->log( DEBUG, "Got read event for ServerConnection: "
-                . (join ":" => $socket->sockhost, $socket->sockport)
+                . $self->address
                 . " connected to ClientConnection: "
-                . (join ":" => $socket->peerhost, $socket->peerport)) if DEBUG;
+                . $self->peer_address) if DEBUG;
 
         my $buffer = '';
         $socket->recv($buffer, 1024);
@@ -52,19 +44,18 @@ class Acktor::Node::ServerConnection :isa(Acktor::Node::Watcher) {
 
     method handle_write ($node) {
         logger->log( DEBUG, "Got write event for ServerConnection: "
-                . (join ":" => $socket->sockhost, $socket->sockport)
+                . $self->address
                 . " connected to ClientConnection: "
-                . (join ":" => $socket->peerhost, $socket->peerport)) if DEBUG;
+                . $self->peer_address) if DEBUG;
 
-        if (@output) {
+        # flush them all
+        while (@output) {
             my $msg = pop @output;
             logger->log( INFO, "Sending '$msg' message from Server" ) if INFO;
-            $socket->send("'$msg' from Server: ".(join ":" => $socket->sockhost, $socket->sockport));
+            $socket->send("'$msg' from Server: ".$self->address);
         }
 
-        unless (@output) {
-            $self->is_writing = false;
-        }
+        $self->is_writing = false;
     }
 
 }

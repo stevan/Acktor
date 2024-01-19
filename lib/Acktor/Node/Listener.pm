@@ -36,15 +36,18 @@ class Acktor::Node::Listener :isa(Acktor::Node::Watcher) {
     }
 
     method handle_read ($node) {
-        logger->log( DEBUG, "Got read event for Listener: "
-                . join ":" => $socket->sockhost, $socket->sockport ) if DEBUG;
+        logger->log( DEBUG, "Got read event for Listener: ".$self->address ) if DEBUG;
 
-        my $conn = $socket->accept;
+        # collect as many as are waiting ...
+        while (my $conn = $socket->accept) {
 
-        logger->log( INFO, "Adding new ServerConnection" ) if INFO;
-        my $server = Acktor::Node::ServerConnection->new( socket => $conn );
-        $server->init_socket;
-        $node->add_watcher( $server );
+            logger->log( INFO, "Adding new ServerConnection" ) if INFO;
+
+            my $server = Acktor::Node::ServerConnection->new( socket => $conn );
+            $server->init_socket;
+
+            $node->add_watcher( $server );
+        }
     }
 
 }

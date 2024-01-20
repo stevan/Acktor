@@ -12,12 +12,11 @@ class Acktor::Context {
     field $actor_ref;
     field @children;
 
-    method self               { $actor_ref }
-    method assign_self ($ref) { $actor_ref = $ref }
+    method self   :lvalue { $actor_ref }
+    method parent :lvalue {    $parent }
 
-    method set_parent ($p) {    $parent = $p }
-    method has_parent      { defined $parent }
-    method parent          {         $parent }
+    method has_self   { defined $actor_ref }
+    method has_parent { defined $parent    }
 
     method all_children {           @children }
     method has_children { !! scalar @children }
@@ -29,7 +28,7 @@ class Acktor::Context {
     method spawn ($props) {
         logger->log( DEBUG, "$actor_ref -> spawn( $props )" ) if DEBUG;
         my $child_ref = $dispatcher->spawn_actor($props);
-        $child_ref->context->set_parent($self);
+        $child_ref->context->parent = $self;
         push @children => $child_ref;
         return $child_ref;
     }

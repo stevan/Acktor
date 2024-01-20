@@ -14,7 +14,7 @@ class Acktor::Ref {
     field $pid;
 
     ADJUST {
-        $context->assign_self($self);
+        $context->self = $self;
     }
 
     method props   { $props   }

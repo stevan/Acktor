@@ -16,7 +16,7 @@ class Acktor::Node::BufferedWriter {
     method write ($socket) {
         while (@messages) {
             my $message = pop @messages;
-            $socket->send($message);
+            $socket->syswrite( $message, length($message) );
         }
 
         # returns false if all messages

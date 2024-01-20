@@ -5,6 +5,8 @@ use builtin      qw[ blessed refaddr true false ];
 
 class Acktor::Node::BufferedReader {
 
+    use constant MAX_BUFFER => 1024;
+
     field $buffer;
     field @messages;
 
@@ -17,7 +19,7 @@ class Acktor::Node::BufferedReader {
 
     method read ($socket) {
 
-        $socket->recv($buffer, 1024);
+        $socket->sysread( $buffer, MAX_BUFFER );
 
         if (length $buffer) {
             push @messages => $buffer;

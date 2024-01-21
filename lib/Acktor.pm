@@ -2,21 +2,23 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
+use Acktor::Behavior::Method;
+
 class Acktor {
 
-    our $CURRENT_CONTEXT;
-    our $CURRENT_MESSAGE;
+    field $behavior;
+
+    method behavior {
+        $behavior //= Acktor::Behavior::Method->new;
+    }
+
+    # TODO - implement stacked behaviors
+    method become ($new_behavior) {
+        $behavior = $new_behavior;
+    }
 
     method receive ($ctx, $message) {
-        my $method = $message->symbol;
-        my $ref    = $self->can( $method );
-
-        die "Method ($method) not found in ($self)" unless $ref;
-
-        local $CURRENT_CONTEXT = $ctx;
-        local $CURRENT_MESSAGE = $message;
-
-        $self->$ref( $message->payload->@* );
+        $self->behavior->apply( $self, $ctx, $message );
     }
 }
 

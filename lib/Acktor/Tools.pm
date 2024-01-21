@@ -31,27 +31,27 @@ sub actor_of ($class, %args) {
 }
 
 sub logger {
-    $Acktor::CURRENT_CONTEXT // die 'Cannot call `logger` outside of an active Acktor::Context';
-    Acktor::Logging::logger( $Acktor::CURRENT_CONTEXT )
+    $Acktor::Behavior::Method::CURRENT_CONTEXT // die 'Cannot call `logger` outside of an active Acktor::Context';
+    Acktor::Logging::logger( $Acktor::Behavior::Method::CURRENT_CONTEXT )
 }
 
 sub spawn ($props) {
-    my $c = $Acktor::CURRENT_CONTEXT // die 'Cannot call `spawn` outside of an active Acktor::Context';
+    my $c = $Acktor::Behavior::Method::CURRENT_CONTEXT // die 'Cannot call `spawn` outside of an active Acktor::Context';
     $c->spawn( $props )
 }
 
 sub context {
-    $Acktor::CURRENT_CONTEXT // die 'Cannot call `context` outside of an active Acktor::Context';
+    $Acktor::Behavior::Method::CURRENT_CONTEXT // die 'Cannot call `context` outside of an active Acktor::Context';
 }
 
 sub sender {
     # it must at least be defined ...
-    my $m = $Acktor::CURRENT_MESSAGE // die 'Cannot call `sender` outside of an active Acktor::Context';
+    my $m = $Acktor::Behavior::Method::CURRENT_MESSAGE // die 'Cannot call `sender` outside of an active Acktor::Context';
     return $m->context->self;
 }
 
 sub event ($symbol, @payload) {
-    my $c = $Acktor::CURRENT_CONTEXT // die 'Cannot create an event outside of an active Acktor::Context';
+    my $c = $Acktor::Behavior::Method::CURRENT_CONTEXT // die 'Cannot create an event outside of an active Acktor::Context';
     Acktor::Event->new(
         symbol  => $symbol,
         payload => \@payload,

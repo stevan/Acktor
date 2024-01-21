@@ -7,6 +7,7 @@ use Acktor::Behavior;
 
 class Acktor::Behavior::Method :isa(Acktor::Behavior) {
 
+    our $CURRENT_ACTOR;
     our $CURRENT_CONTEXT;
     our $CURRENT_MESSAGE;
 
@@ -16,12 +17,12 @@ class Acktor::Behavior::Method :isa(Acktor::Behavior) {
 
         die "Method ($method) not found in ($actor)" unless $ref;
 
+        local $CURRENT_ACTOR   = $actor;
         local $CURRENT_CONTEXT = $context;
         local $CURRENT_MESSAGE = $message;
 
         $actor->$ref( $message->payload->@* );
     }
-
 }
 
 __END__

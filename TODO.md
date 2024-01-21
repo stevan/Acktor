@@ -1,3 +1,82 @@
+
+# Behaviors DSL
+
+`use Acktor::Behaviors;`
+
+This will export all the stuff Acktor::Tools exports, but do it into the package instead.
+It will also add a `:Receive` attribute for the methods, which can be tracked by the
+`Acktor::Behavior::Method` class to only allow the calling of those methods.
+
+
+```
+class Pong :isa(Acktor) {
+    use Acktor::Behaviors;
+
+    field $ping;
+
+    method Start :Receive {
+        $ping = sender;
+        $ping->send( event *Ping::Ping, 0 );
+    }
+
+    method Pong :Receive ($count) {
+        $ping->send( event *Ping::Ping, $count );
+    }
+}
+
+class Ping :isa(Acktor) {
+    use Acktor::Behaviors;
+
+    field $max_bounce :param;
+    field $pong;
+
+    method Start :Receive {
+        $pong = spawn( actor_of *Pong:: );
+        $pong->send( event *Pong::Start );
+    }
+
+    method Ping :Receive ($count) {
+        $count++;
+
+        if ( $count <= $max_bounce ) {
+            $pong->send( event *Pong::Pong, $count );
+        } else {
+            context->stop(context->self);
+        }
+    }
+}
+```
+
+# Receive Blocks
+
+Here in this example we have the `receive` function, which will have the affect of changing the
+behavior of the system, to just be a receiver of the given event. After receiving this response
+it will revert back to the previous behavior.
+
+```
+class Greeter :isa(Acktor) {
+    use Acktor::Behaviors;
+
+    method Greet :Receive ($greeting) {
+        sender->send( event *Response, 'Greetings!' );
+    }
+}
+
+class HelloWorld :isa(Acktor) {
+    use Acktor::Behaviors;
+
+    method SayHello :Receive {
+        $ping->send( event *Greeter::Greet, 'Hello' );
+
+        receive[*Greeter::Response] => sub ($ctx, $message) {
+            # TODO ????
+        };
+    }
+}
+```
+
+
+
 <!---------------------------------------------------------------------------->
 # TODO
 <!---------------------------------------------------------------------------->
@@ -69,7 +148,7 @@
     - Spawn
     - Send
     - Lookup
-    - Identity
+    - Identify
 
 - Singals
     https://github.com/akka/akka/blob/v2.8.5/akka-actor-typed/src/main/scala/akka/actor/typed/MessageAndSignals.scala

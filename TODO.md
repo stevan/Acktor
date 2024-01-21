@@ -47,35 +47,93 @@ class Ping :isa(Acktor) {
 }
 ```
 
-# Receive Blocks
+# Await Blocks
 
-Here in this example we have the `receive` function, which will have the affect of changing the
+Here in this example we have the `await` function, which will have the affect of changing the
 behavior of the system, to just be a receiver of the given event. After receiving this response
 it will revert back to the previous behavior.
 
+It effectively blocks that instance until the right symbol arrives. Any other messages will
+result in an error.
+
+
 ```
-class Greeter :isa(Acktor) {
+
+class HTTPServer :isa(Acktor) {
     use Acktor::Behaviors;
 
-    method Greet :Receive ($greeting) {
-        sender->send( event *Response, 'Greetings!' );
+    method Request :Receive ($method, $url) {
+        sender->send( event *Response => '200 OK' );
     }
 }
 
-class HelloWorld :isa(Acktor) {
+class HTTPClient :isa(Acktor) {
     use Acktor::Behaviors;
 
-    method SayHello :Receive {
-        $ping->send( event *Greeter::Greet, 'Hello' );
+    field $server;
 
-        receive[*Greeter::Response] => sub ($ctx, $message) {
-            # TODO ????
+    method Request :Receive ($url) {
+
+        $server->send( event *HTTPServer::Request => ( GET => $url ) );
+
+        await[*HTTPServer::Response] => method {
+            ...
         };
     }
 }
+
+
+$client->send(
+    event *HTTPClient::Request, ('http://www.google.com')
+);
+
+
 ```
 
+# Protocols
 
+Add protocols, that create the event symbols and use the `Receive` attribute to direct messages to
+a given method.
+
+```
+
+class HTTP {
+    use Acktor::Protocol;
+
+    event *Request;
+    event *Response;
+}
+
+class HTTPServer :isa(Acktor) {
+    use Acktor::Behaviors;
+
+    method Request :Receive(HTTP::Request) ($method, $url) {
+        sender->send( event *HTTP::Response => '200 OK' );
+    }
+}
+
+class HTTPClient :isa(Acktor) {
+    use Acktor::Behaviors;
+
+    field $server;
+
+    method Request :Receive ($url) {
+
+        $server->send( event *HTTP::Request => ( GET => $url ) );
+
+        await[*HTTP::Response] => method {
+            ...
+        };
+    }
+}
+
+
+$client->send(
+    event *HTTPClient::Request, ('http://www.google.com')
+);
+
+
+```
 
 <!---------------------------------------------------------------------------->
 # TODO

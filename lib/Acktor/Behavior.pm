@@ -4,7 +4,7 @@ use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
 class Acktor::Behavior {
-    method apply ($actor, $context, $message) { ... }
+    method receive ($actor, $context, $message) { ... }
 }
 
 __END__

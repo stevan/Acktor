@@ -11,7 +11,7 @@ class Acktor::Behavior::Method :isa(Acktor::Behavior) {
     our $CURRENT_CONTEXT;
     our $CURRENT_MESSAGE;
 
-    method apply ($actor, $context, $message) {
+    method receive ($actor, $context, $message) {
         my $method = $message->symbol;
         my $ref    = $actor->can( $method );
 

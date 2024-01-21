@@ -6,19 +6,27 @@ use Acktor::Behavior::Method;
 
 class Acktor {
 
-    field $behavior;
+    field @behavior;
 
-    method behavior {
-        $behavior //= Acktor::Behavior::Method->new;
+    ADJUST {
+        push @behavior => Acktor::Behavior::Method->new;
     }
 
-    # TODO - implement stacked behaviors
-    method become ($new_behavior) {
-        $behavior = $new_behavior;
+    # ...
+
+    method become ($behavior) {
+        push @behavior => $behavior;
     }
 
-    method receive ($ctx, $message) {
-        $self->behavior->apply( $self, $ctx, $message );
+    method unbecome {
+        # TODO - do not allow it to pop off the last one
+        pop @behavior;
+    }
+
+    # ...
+
+    method apply ($ctx, $message) {
+        $behavior[-1]->receive( $self, $ctx, $message );
     }
 }
 

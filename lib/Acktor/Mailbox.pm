@@ -59,9 +59,9 @@ class Acktor::Mailbox {
 
                 my $message = shift @msgs;
                 try {
-                    $actor->receive($context, $message);
+                    $actor->apply($context, $message);
                 } catch ($e) {
-                    logger->log( ERROR, "actor::receive($message) failed with ($e)" ) if ERROR;
+                    logger->log( ERROR, "actor::apply($message) failed with ($e)" ) if ERROR;
                     # TODO: decide how to handle this:
                     #       - resume
                     #       - restart

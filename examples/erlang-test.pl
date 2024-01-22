@@ -9,7 +9,7 @@ use Time::HiRes 'time';
 
 use Acktor;
 use Acktor::System;
-use Acktor::Tools;
+use Acktor::Behaviors;
 
 our $NUM_PROCESSES = $ARGV[0] // 10;
 our $NUM_MESSAGES  = $ARGV[1] // 10;

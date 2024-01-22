@@ -16,7 +16,7 @@ Yet Another Attempt At An Actor Model For Perl.
 ```ruby
 use Acktor;
 use Acktor::System;
-use Acktor::Tools;
+use Acktor::Behaviors;
 
 class Pong :isa(Acktor) {
     field $ping;

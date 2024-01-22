@@ -8,7 +8,7 @@ use Data::Dumper;
 use Test::More;
 
 use Acktor;
-use Acktor::Tools;
+use Acktor::Behaviors;
 
 use Acktor::System;
 use Acktor::Props;

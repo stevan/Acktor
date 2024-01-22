@@ -3,7 +3,7 @@
 
 `use Acktor::Behaviors;`
 
-This will export all the stuff Acktor::Tools exports, but do it into the package instead.
+This will export all the stuff Acktor::Behaviors exports, but do it into the package instead.
 It will also add a `:Receive` attribute for the methods, which can be tracked by the
 `Acktor::Behavior::Method` class to only allow the calling of those methods.
 
@@ -47,6 +47,12 @@ class Ping :isa(Acktor) {
 }
 ```
 
+## Implement Timers in the Scheduler
+
+- this is also needed for the `await` pattern below
+- this is part of the integration of the Watchers
+
+
 # Await Blocks
 
 Here in this example we have the `await` function, which will have the affect of changing the
@@ -76,7 +82,7 @@ class HTTPClient :isa(Acktor) {
 
         $server->send( event *HTTPServer::Request => ( GET => $url ) );
 
-        await[*HTTPServer::Response] => method {
+        await[*HTTPServer::Response] => (timeout => 3) => method {
             ...
         };
     }
@@ -132,20 +138,81 @@ $client->send(
     event *HTTPClient::Request, ('http://www.google.com')
 );
 
+```
+
+An example of an `await` that takes multiple different cases and will handle them accordingly. Not 100% sure this is workable, but it is a sketch. One issue is that with a single case `await` (like above) the reverseal (`unbecome`) is
+obvious. In this it would need to be manual.
 
 ```
+
+class HTTPClient :isa(Acktor) {
+    use Acktor::Behaviors;
+
+    field $server;
+
+    method Request :Receive ($url) {
+
+        $server->send( event *HTTP::Request => ( GET => $url ) );
+
+        await[*HTTP::] => method {
+
+            case *HTTP::Response => method {
+                # ... block incoming requests while we wait for the response
+                #     after which we release the block and go back to a normal
+                #     instance of HTTPClient
+                $self->unbecome;
+            };
+
+            case *HTTPClient::Request => method {
+                # ... and buffer any of those incoming requests
+            };
+
+        };
+    }
+}
+
+```
+
+# Futures
+
+Whereas `await` blocks the actor and only accepts the expected event, which is not always desireable. The `future` keyword would, behind the scenes, create a Future Actor instance, whcih would get the response, and call the callbacks which are set with `is_done`, etc.
+
+THe advantage of the `future` is that it does not affect the actors state. Whereas `await` affects the state of the instance.
+
+```
+
+class HTTPClient :isa(Acktor) {
+    use Acktor::Behaviors;
+
+    field $server;
+
+    method Request :Receive ($url) {
+
+        my $f = future[*HTTP::Response] => method {
+            $server->send( event *HTTP::Request => ( GET => $url ) );
+        };
+
+        $f->is_done(method { ... })
+          ->is_error(method { ... })
+          ->timeout(5)
+          ->go; # or something else to say "start this future"
+    }
+}
+
+
+
+```
+
+# https://proto.actor/docs/futures/
+
+# https://soft.vub.ac.be/amop/at/tutorial/actors#futures
+# https://en.wikipedia.org/wiki/Futures_and_promises#Semantics_of_futures_in_the_actor_model
+# https://docs.oracle.com/en/java/javase/19/docs/api/java.base/java/util/concurrent/Future.html
+
 
 <!---------------------------------------------------------------------------->
 # TODO
 <!---------------------------------------------------------------------------->
-
-## Implement Behaviors
-
-- make them stacked, so that it is possible to change behavior
-    - normal behavior is to use the same
-        - but can use some kind of `become` function to change
-    - but you can replace it with a `recieve` block to await a response
-        - this could be how to handle "Futures"
 
 ## Re-Add the RemoteMailbox/PostOffice stuff
 
@@ -186,10 +253,6 @@ $client->send(
 ## Implement Watchers
 
 - in progress
-
-## Implement Timers
-
-- this is part of the integration of the Watchers
 
 <!---------------------------------------------------------------------------->
 # TODO (examples)

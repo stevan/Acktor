@@ -9,11 +9,14 @@ use Test::More;
 
 use Acktor;
 use Acktor::System;
-use Acktor::Tools;
+use Acktor::Behaviors;
 
 class Service :isa(Acktor) {
+
+    method Response;
+
     method Request ($op, $x, $y) {
-        sender->send(event *Client::Response => (
+        sender->send(event *Response => (
             ($op eq 'add') ? $x + $y :
             ($op eq 'sub') ? $x - $y :
             ($op eq 'mul') ? $x * $y :
@@ -37,12 +40,20 @@ class Client :isa(Acktor) {
             isa_ok($service, 'Acktor::Ref');
             is($service->props->class, 'Service', '... the Actor lookup gave us the expected class');
         }
-        $service->send( event *Service::Request => ( $op, $x, $y ) );
-    }
 
-    method Response ($value) {
-        logger->log( INFO, "value($value)") if INFO;
-        $RESPONSE = $value;
+        logger->log( INFO, "Sending Service request ... ($op, $x, $y)") if INFO;
+        $service->send( event *Service::Request => ( $op, $x, $y ) );
+
+        await *Service::Response => method ($value) {
+            logger->log( INFO, "Got Response($value)") if INFO;
+            $RESPONSE = $value;
+
+            # tail call ;)
+            context->self->send( event *Client::Call => add => $value, $value )
+                if $value < 100;
+        };
+
+        logger->log( INFO, "Awaiting response ...") if INFO;
     }
 }
 
@@ -58,6 +69,7 @@ sub init ($ctx) {
     is($Client->props->class, 'Client', '... the Actor is of the expected class');
 
     $Client->send( event *Client::Call => add => 10, 10 );
+    $Client->send( event *Client::Call => add => 10, 15 );
 }
 
 my $system = Acktor::System->new;
@@ -65,7 +77,7 @@ isa_ok($system, 'Acktor::System');
 
 $system->run( init => \&init );
 
-is($Client::RESPONSE, 20, '... got the expected response');
+is($Client::RESPONSE, 160, '... got the expected response');
 
 done_testing;
 

@@ -1,4 +1,4 @@
-package Acktor::Tools;
+package Acktor::Behaviors;
 use v5.38;
 use experimental qw[ builtin];
 use builtin      qw[ export_lexically ];
@@ -7,14 +7,32 @@ use Acktor::Event;
 use Acktor::Props;
 use Acktor::Logging ();
 
+use Acktor::Behavior::Await;
+
 sub import {
     export_lexically(
+        '&await'    => \&await,
         '&event'    => \&event,
         '&spawn'    => \&spawn,
         '&context'  => \&context,
         '&sender'   => \&sender,
         '&logger'   => \&logger,
         '&actor_of' => \&actor_of,
+    );
+}
+
+our $CURRENT_ACTOR;
+our $CURRENT_CONTEXT;
+our $CURRENT_MESSAGE;
+
+sub await ($symbol, $method) {
+    $CURRENT_ACTOR // die 'Cannot call `await` outside of an active Acktor::Context';
+
+    $CURRENT_ACTOR->become(
+        Acktor::Behavior::Await->new(
+            symbol   => $symbol,
+            receiver => $method
+        )
     );
 }
 
@@ -31,27 +49,27 @@ sub actor_of ($class, %args) {
 }
 
 sub logger {
-    $Acktor::Behavior::Method::CURRENT_CONTEXT // die 'Cannot call `logger` outside of an active Acktor::Context';
-    Acktor::Logging::logger( $Acktor::Behavior::Method::CURRENT_CONTEXT )
+    $CURRENT_CONTEXT // die 'Cannot call `logger` outside of an active Acktor::Context';
+    Acktor::Logging::logger( $CURRENT_CONTEXT )
 }
 
 sub spawn ($props) {
-    my $c = $Acktor::Behavior::Method::CURRENT_CONTEXT // die 'Cannot call `spawn` outside of an active Acktor::Context';
+    my $c = $CURRENT_CONTEXT // die 'Cannot call `spawn` outside of an active Acktor::Context';
     $c->spawn( $props )
 }
 
 sub context {
-    $Acktor::Behavior::Method::CURRENT_CONTEXT // die 'Cannot call `context` outside of an active Acktor::Context';
+    $CURRENT_CONTEXT // die 'Cannot call `context` outside of an active Acktor::Context';
 }
 
 sub sender {
     # it must at least be defined ...
-    my $m = $Acktor::Behavior::Method::CURRENT_MESSAGE // die 'Cannot call `sender` outside of an active Acktor::Context';
+    my $m = $CURRENT_MESSAGE // die 'Cannot call `sender` outside of an active Acktor::Context';
     return $m->context->self;
 }
 
 sub event ($symbol, @payload) {
-    my $c = $Acktor::Behavior::Method::CURRENT_CONTEXT // die 'Cannot create an event outside of an active Acktor::Context';
+    my $c = $CURRENT_CONTEXT // die 'Cannot create an event outside of an active Acktor::Context';
     Acktor::Event->new(
         symbol  => $symbol,
         payload => \@payload,

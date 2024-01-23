@@ -12,10 +12,10 @@ use Acktor::System;
 use Acktor::Behaviors;
 
 class Service :isa(Acktor) {
-
-    method Response;
+    use Acktor::Logging;
 
     method Request ($op, $x, $y) {
+        logger->log( INFO, "Got Client request ... ($op, $x, $y)") if INFO;
         sender->send(event *Response => (
             ($op eq 'add') ? $x + $y :
             ($op eq 'sub') ? $x - $y :

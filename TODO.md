@@ -154,7 +154,7 @@ class HTTPClient :isa(Acktor) {
 
         $server->send( event *HTTP::Request => ( GET => $url ) );
 
-        await[*HTTP::] => method {
+        await method {
 
             case *HTTP::Response => method {
                 # ... block incoming requests while we wait for the response

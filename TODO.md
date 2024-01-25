@@ -6,6 +6,8 @@ to build a map of event-symbols accepted -> methods.
 
 We also need to parse so we can do `:Receive(Some::Event)` and dispatch accordingly.
 
+NOTE: does not work on anon methods, which is annoying
+
 ## Implement Interval Timers
 
 Think about this more.
@@ -56,7 +58,7 @@ class HTTPClient :isa(Acktor) {
 
         $server->send( event *HTTPServer::Request => ( GET => $url ) );
 
-        await method :Receive(HTTPServer::Response) ($body) {
+        await *HTTPServer::Response => method :Receive ($body) {
             ...
         };
     }
@@ -101,7 +103,7 @@ class HTTPClient :isa(Acktor) {
 
         $server->send( event *HTTP::Request => ( GET => $url ) );
 
-        await method :Receive(HTTP::Response) ($body) {
+        await *HTTP::Response => method :Receive ($body) {
             ...
         };
     }
@@ -129,13 +131,13 @@ class HTTPClient :isa(Acktor) {
         $server->send( event *HTTP::Request => ( GET => $url ) );
 
         await { timeout => 10 },
-            method :Receive(HTTP::Response) ($body) {
+            *HTTP::Response => method :Receive ($body) {
                 # ... handle the body, after which we go back to
             },
-            method :Receive(HTTPClient::Request) ($url) {
+            *HTTPClient::Request => method :Receive ($url) {
                 # ... and buffer any of those incoming requests
             },
-            method :Receive(Timeout) {
+            'Timeout' => method :Receive {
                 # timeout!
             }
         ;

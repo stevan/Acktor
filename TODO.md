@@ -66,6 +66,25 @@ be mostly used internally to add features to things.
 
 Think more about this.
 
+
+```
+
+    $ctx->schedule(
+        event => event( *Hello::Goodbye => "Cruel World" ),
+        for   => $hello,
+        after => 2,
+    );
+
+    $ctx->schedule(
+        event => event( *Hello::Goodbye => "Cruel World" ),
+        for   => $hello,
+        every => 2,
+    );
+
+```
+
+
+
 # Await Blocks
 
 Here in this example we have the `await` function, which will have the affect of changing the

@@ -27,7 +27,11 @@ class Acktor::Context {
 
     method lookup ($alias) { $dispatcher->lookup($alias) }
 
-    method schedule ($timeout, $to, $event) {
+    method schedule (%options) {
+        my $timeout = $options{after} // die 'You must specify an `after` value for the timeout';
+        my $to      = $options{to};
+        my $event   = $options{event};
+
         logger->log( DEBUG, "schedule( $timeout, $to, $event )" ) if DEBUG;
 
         my $timer = Acktor::Timer->new(

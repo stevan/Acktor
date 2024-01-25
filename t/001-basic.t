@@ -41,7 +41,11 @@ sub init ($ctx) {
 
     $hello->send( event *Hello::Greet => "World" );
 
-    $ctx->schedule( 1, $hello, event *Hello::Goodbye => "Cruel World" );
+    $ctx->schedule(
+        after => 1,
+        to    => $hello,
+        event => event *Hello::Goodbye => "Cruel World"
+    );
 }
 
 my $system = Acktor::System->new;

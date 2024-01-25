@@ -21,12 +21,30 @@ sub import {
     );
 }
 
+my %_receivers;
+sub Acktor::FETCH_CODE_ATTRIBUTES  ($, $code) { $_receivers{ $code } }
+sub Acktor::MODIFY_CODE_ATTRIBUTES ($, $code, @attrs) {
+    #warn "HELLO $code => " . join ', ' => @attrs;
+    grep { $_ !~ /^Receive/ }
+    map  { $_receivers{ $code } = $_ if $_ =~ /^Receive/; $_; }
+    @attrs;
+}
+
 our $CURRENT_ACTOR;
 our $CURRENT_CONTEXT;
 our $CURRENT_MESSAGE;
 
 sub await ($symbol, $method) {
     $CURRENT_ACTOR // die 'Cannot call `await` outside of an active Acktor::Context';
+
+    #warn "HELLO await: $method";
+
+    #my @attrs = grep { $_ =~ /^Receive/ } grep defined, attributes::get($method);
+    #use Data::Dumper;
+    #warn Dumper \@attrs;
+    #warn 'ATTRS: ', join ', ' => @attrs;
+
+    #my ($symbol) = ($attrs[0] =~ /^Receive\((.*)\)$/);
 
     $CURRENT_ACTOR->become(
         Acktor::Behavior::Await->new(

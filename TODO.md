@@ -1,73 +1,16 @@
 
-# Behaviors DSL
+## Receive attribute
 
-`use Acktor::Behaviors;`
+Currently we just check for it when the event is received. We need to do a pre-check
+to build a map of event-symbols accepted -> methods.
 
-This will export all the stuff Acktor::Behaviors exports, but do it into the package instead.
-It will also add a `:Receive` attribute for the methods, which can be tracked by the
-`Acktor::Behavior::Method` class to only allow the calling of those methods.
+We also need to parse so we can do `:Receive(Some::Event)` and dispatch accordingly.
 
+## Implement Interval Timers
 
-```
-class Pong :isa(Acktor) {
-    use Acktor::Behaviors;
+Think about this more.
 
-    field $ping;
-
-    method Start :Receive {
-        $ping = sender;
-        $ping->send( event *Ping::Ping, 0 );
-    }
-
-    method Pong :Receive ($count) {
-        $ping->send( event *Ping::Ping, $count );
-    }
-}
-
-class Ping :isa(Acktor) {
-    use Acktor::Behaviors;
-
-    field $max_bounce :param;
-    field $pong;
-
-    method Start :Receive {
-        $pong = spawn( actor_of *Pong:: );
-        $pong->send( event *Pong::Start );
-    }
-
-    method Ping :Receive ($count) {
-        $count++;
-
-        if ( $count <= $max_bounce ) {
-            $pong->send( event *Pong::Pong, $count );
-        } else {
-            context->stop(context->self);
-        }
-    }
-}
-```
-
-## Implement Timers in the Scheduler
-
-Users access to Timers needs to be limited as the callbacks can be run at any time,
-and we care a bit about where and when things get run. So nothing should be able to
-schedule an arbitrary callback, only certain actions like:
-
-- sending message
-- timing out an action
-
-So this cannot be a completely general purpose timing tool, but instead needs to
-be mostly used internally to add features to things.
-
-- `await` construct should have a timeout
-- intervals should be able to be scheduled, but internally for sending messages not callback
-- things could be delayed/deferred, such as sending an event.
-- receive timeout could be implemented perhaps (see Akka.NET for this)
-
-Think more about this.
-
-
-```
+```ruby
 
     $ctx->schedule(
         event => event( *Hello::Goodbye => "Cruel World" ),
@@ -84,7 +27,6 @@ Think more about this.
 ```
 
 
-
 # Await Blocks
 
 Here in this example we have the `await` function, which will have the affect of changing the
@@ -95,7 +37,7 @@ It effectively blocks that instance until the right symbol arrives. Any other me
 result in an error.
 
 
-```
+```ruby
 
 class HTTPServer :isa(Acktor) {
     use Acktor::Behaviors;
@@ -114,7 +56,7 @@ class HTTPClient :isa(Acktor) {
 
         $server->send( event *HTTPServer::Request => ( GET => $url ) );
 
-        await[*HTTPServer::Response] => (timeout => 3) => method {
+        await method :Receive(HTTPServer::Response) ($body) {
             ...
         };
     }
@@ -133,7 +75,7 @@ $client->send(
 Add protocols, that create the event symbols and use the `Receive` attribute to direct messages to
 a given method.
 
-```
+```ruby
 
 class HTTP {
     use Acktor::Protocol;
@@ -159,7 +101,7 @@ class HTTPClient :isa(Acktor) {
 
         $server->send( event *HTTP::Request => ( GET => $url ) );
 
-        await[*HTTP::Response] => method {
+        await method :Receive(HTTP::Response) ($body) {
             ...
         };
     }
@@ -175,7 +117,7 @@ $client->send(
 An example of an `await` that takes multiple different cases and will handle them accordingly. Not 100% sure this is workable, but it is a sketch. One issue is that with a single case `await` (like above) the reverseal (`unbecome`) is
 obvious. In this it would need to be manual.
 
-```
+```ruby
 
 class HTTPClient :isa(Acktor) {
     use Acktor::Behaviors;
@@ -186,20 +128,17 @@ class HTTPClient :isa(Acktor) {
 
         $server->send( event *HTTP::Request => ( GET => $url ) );
 
-        await method {
-
-            case *HTTP::Response => method {
-                # ... block incoming requests while we wait for the response
-                #     after which we release the block and go back to a normal
-                #     instance of HTTPClient
-                $self->unbecome;
-            };
-
-            case *HTTPClient::Request => method {
+        await { timeout => 10 },
+            method :Receive(HTTP::Response) ($body) {
+                # ... handle the body, after which we go back to
+            },
+            method :Receive(HTTPClient::Request) ($url) {
                 # ... and buffer any of those incoming requests
-            };
-
-        };
+            },
+            method :Receive(Timeout) {
+                # timeout!
+            }
+        ;
     }
 }
 
@@ -211,7 +150,7 @@ Whereas `await` blocks the actor and only accepts the expected event, which is n
 
 THe advantage of the `future` is that it does not affect the actors state. Whereas `await` affects the state of the instance.
 
-```
+```ruby
 
 class HTTPClient :isa(Acktor) {
     use Acktor::Behaviors;
@@ -220,9 +159,10 @@ class HTTPClient :isa(Acktor) {
 
     method Request :Receive ($url) {
 
-        my $f = future[*HTTP::Response] => method {
-            $server->send( event *HTTP::Request => ( GET => $url ) );
-        };
+        my $f = future[*HTTP::Response] => (
+            to    => $server,
+            event => event( *HTTP::Request => ( GET => $url ) ),
+        );
 
         $f->is_done(method { ... })
           ->is_error(method { ... })

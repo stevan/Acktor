@@ -14,6 +14,8 @@ use Acktor::Behaviors;
 class Service :isa(Acktor) {
     use Acktor::Logging;
 
+    method Response; # TODO : protocols
+
     method Request :Receive ($op, $x, $y) {
         logger->log( INFO, "Got Client request ... ($op, $x, $y)") if INFO;
         sender->send(event *Response => (
@@ -44,7 +46,13 @@ class Client :isa(Acktor) {
         logger->log( INFO, "Sending Service request ... ($op, $x, $y)") if INFO;
         $service->send( event *Service::Request => ( $op, $x, $y ) );
 
-        await *Service::Response => method ($value) {
+        # NOTE:
+        # currently this does not work, to add the attribute to the method
+        # and then extract that as metadata inside await, we would need to
+        # add them manually  like so, which is gross
+        #attributes::->import( __PACKAGE__, $m, 'Receive(*Service::Response)' );
+
+        await *Service::Response => method :Receive(*Service::Response) ($value) {
             logger->log( INFO, "Got Response($value)") if INFO;
             $RESPONSE = $value;
 

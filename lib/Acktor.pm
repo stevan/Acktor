@@ -28,16 +28,6 @@ class Acktor {
     method apply ($ctx, $message) {
         $behavior[0]->receive( $self, $ctx, $message );
     }
-
-    # ... Decorators ...
-
-    my %_receivers;
-    sub FETCH_CODE_ATTRIBUTES  ($, $code) { $_receivers{ refaddr $code } }
-    sub MODIFY_CODE_ATTRIBUTES ($, $code, @attrs) {
-        grep { $_ !~ /^Receive/ }
-        map  { $_receivers{ refaddr $code } = $_ if $_ =~ /^Receive/; $_; }
-        @attrs;
-    }
 }
 
 __END__

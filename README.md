@@ -21,12 +21,12 @@ use Acktor::Behaviors;
 class Pong :isa(Acktor) {
     field $ping;
 
-    method Start {
+    method Start :Receive {
         $ping = sender;
         $ping->send( event *Ping::Ping, 0 );
     }
 
-    method Pong ($count) {
+    method Pong :Receive ($count) {
         $ping->send( event *Ping::Ping, $count );
     }
 }
@@ -35,12 +35,12 @@ class Ping :isa(Acktor) {
     field $max_bounce :param;
     field $pong;
 
-    method Start {
+    method Start :Receive {
         $pong = spawn( actor_of *Pong:: );
         $pong->send( event *Pong::Start );
     }
 
-    method Ping ($count) {
+    method Ping :Receive ($count) {
         $count++;
 
         if ( $count <= $max_bounce ) {

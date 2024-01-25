@@ -10,7 +10,7 @@ class Acktor::System::Init :isa(Acktor) {
 
     field $init_callback :param;
 
-    method Initialize {
+    method Initialize :Receive {
         try {
             $init_callback->( context );
         } catch ($e) {

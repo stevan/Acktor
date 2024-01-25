@@ -29,14 +29,14 @@ class Acktor::Context {
 
     method schedule (%options) {
         my $timeout = $options{after} // die 'You must specify an `after` value for the timeout';
-        my $to      = $options{to};
+        my $for     = $options{for};
         my $event   = $options{event};
 
-        logger->log( DEBUG, "schedule( $timeout, $to, $event )" ) if DEBUG;
+        logger->log( DEBUG, "schedule( $timeout, $for, $event )" ) if DEBUG;
 
         my $timer = Acktor::Timer->new(
             timeout  => $timeout,
-            callback => sub { $to->send($event) }
+            callback => sub { $for->send($event) }
         );
 
         $dispatcher->schedule( $timer );

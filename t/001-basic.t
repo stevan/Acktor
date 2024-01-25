@@ -21,13 +21,13 @@ class Hello :isa(Acktor) {
     our $GREETED = 0;
     our $GOODBYE = 0;
 
-    method Greet ($body) {
+    method Greet :Receive ($body) {
         logger->log( INFO, ">> Hello $body" ) if INFO;
         is($body, 'World', '... got the expected greeting');
         $GREETED++;
     }
 
-    method Goodbye ($body) {
+    method Goodbye :Receive ($body) {
         logger->log( INFO, ">> Goodbye $body" ) if INFO;
         is($body, 'Cruel World', '... got the expected greeting');
         $GOODBYE++;
@@ -42,9 +42,9 @@ sub init ($ctx) {
     $hello->send( event *Hello::Greet => "World" );
 
     $ctx->schedule(
+        event => event( *Hello::Goodbye => "Cruel World" ),
+        for   => $hello,
         after => 1,
-        to    => $hello,
-        event => event *Hello::Goodbye => "Cruel World"
     );
 }
 

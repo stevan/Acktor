@@ -21,7 +21,7 @@ class Pong :isa(Acktor) {
 
     field $ping;
 
-    method Start {
+    method Start :Receive {
         $ping = sender;
         isa_ok($ping, 'Acktor::Ref');
         is($ping->props->class, 'Ping', '... the Actor is of the expected class');
@@ -29,7 +29,7 @@ class Pong :isa(Acktor) {
         $ping->send( event *Ping::Ping, 0 );
     }
 
-    method Pong ($count) {
+    method Pong :Receive ($count) {
         $ping->send( event *Ping::Ping, $count );
         $BOUNCES++;
     }
@@ -43,7 +43,7 @@ class Ping :isa(Acktor) {
 
     our $BOUNCES = 0;
 
-    method Start {
+    method Start :Receive {
         $pong = spawn( actor_of Pong:: );
         isa_ok($pong, 'Acktor::Ref');
         is($pong->props->class, 'Pong', '... the Actor is of the expected class');
@@ -51,7 +51,7 @@ class Ping :isa(Acktor) {
         $pong->send( event *Pong::Start );
     }
 
-    method Ping ($count) {
+    method Ping :Receive ($count) {
         $count++;
 
         if ( $count <= $max_bounce ) {

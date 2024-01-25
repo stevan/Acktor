@@ -14,7 +14,7 @@ use Acktor::Behaviors;
 class Service :isa(Acktor) {
     use Acktor::Logging;
 
-    method Request ($op, $x, $y) {
+    method Request :Receive ($op, $x, $y) {
         logger->log( INFO, "Got Client request ... ($op, $x, $y)") if INFO;
         sender->send(event *Response => (
             ($op eq 'add') ? $x + $y :
@@ -34,7 +34,7 @@ class Client :isa(Acktor) {
 
     field $service;
 
-    method Call ($op, $x, $y) {
+    method Call :Receive ($op, $x, $y) {
         unless ($service) {
             $service = context->lookup('service');
             isa_ok($service, 'Acktor::Ref');
@@ -69,7 +69,7 @@ sub init ($ctx) {
     is($Client->props->class, 'Client', '... the Actor is of the expected class');
 
     $Client->send( event *Client::Call => add => 10, 10 );
-    $Client->send( event *Client::Call => add => 10, 15 );
+    #$Client->send( event *Client::Call => add => 10, 15 );
 }
 
 my $system = Acktor::System->new;

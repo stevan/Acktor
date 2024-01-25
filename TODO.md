@@ -49,9 +49,22 @@ class Ping :isa(Acktor) {
 
 ## Implement Timers in the Scheduler
 
-- this is also needed for the `await` pattern below
-- this is part of the integration of the Watchers
+Users access to Timers needs to be limited as the callbacks can be run at any time,
+and we care a bit about where and when things get run. So nothing should be able to
+schedule an arbitrary callback, only certain actions like:
 
+- sending message
+- timing out an action
+
+So this cannot be a completely general purpose timing tool, but instead needs to
+be mostly used internally to add features to things.
+
+- `await` construct should have a timeout
+- intervals should be able to be scheduled, but internally for sending messages not callback
+- things could be delayed/deferred, such as sending an event.
+- receive timeout could be implemented perhaps (see Akka.NET for this)
+
+Think more about this.
 
 # Await Blocks
 
@@ -123,7 +136,7 @@ class HTTPClient :isa(Acktor) {
 
     field $server;
 
-    method Request :Receive ($url) {
+    method Get :Receive ($url) {
 
         $server->send( event *HTTP::Request => ( GET => $url ) );
 
@@ -135,7 +148,7 @@ class HTTPClient :isa(Acktor) {
 
 
 $client->send(
-    event *HTTPClient::Request, ('http://www.google.com')
+    event *HTTPClient::Get, ('http://www.google.com')
 );
 
 ```

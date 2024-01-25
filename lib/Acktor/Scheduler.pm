@@ -3,14 +3,21 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
+use Acktor::Timers;
+
 class Acktor::Scheduler {
     use Acktor::Logging;
 
+    field $timers;
     field %mailboxes;
     field @deadletters;
 
     field @to_be_run;
     field %to_be_run;
+
+    ADJUST {
+        $timers = Acktor::Timers->new;
+    }
 
     # ...
 
@@ -41,9 +48,19 @@ class Acktor::Scheduler {
         push @to_be_run => $f;
     }
 
+    method schedule_timer ($timer) {
+        $timers->schedule_timer($timer);
+    }
+
     # ...
 
     method tick {
+
+        if ($timers->has_timers) {
+            logger->log( DEBUG, "tick =>> running timers" ) if DEBUG;
+            $timers->tick;
+        }
+
         my @to_run;
         my %to_run;
 
@@ -96,12 +113,20 @@ class Acktor::Scheduler {
         while (1) {
             $tick++;
             logger->line( "scheduler::tick($tick)" ) if DEBUG;
-            if ( scalar @to_be_run == 0 && scalar keys %to_be_run == 0 ) {
+
+            if ( scalar @to_be_run == 0 && scalar keys %to_be_run == 0 && !$timers->has_timers ) {
                 last if $run_until_done;
                 logger->log( DEBUG, '=>> nothing to run, ... yet' ) if DEBUG;
             }
             else {
                 $self->tick;
+            }
+
+            if ( scalar @to_be_run == 0 && scalar keys %to_be_run == 0 ) {
+                if (my $wait = $timers->should_wait) {
+                    logger->log( DEBUG, "... waiting ($wait)" ) if DEBUG;
+                    $timers->sleep( $wait );
+                }
             }
         }
 

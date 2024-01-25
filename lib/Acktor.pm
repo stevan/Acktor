@@ -15,18 +15,18 @@ class Acktor {
     # ...
 
     method become ($behavior) {
-        push @behavior => $behavior;
+        unshift @behavior => $behavior;
     }
 
     method unbecome {
         # TODO - do not allow it to pop off the last one
-        pop @behavior;
+        shift @behavior;
     }
 
     # ...
 
     method apply ($ctx, $message) {
-        $behavior[-1]->receive( $self, $ctx, $message );
+        $behavior[0]->receive( $self, $ctx, $message );
     }
 }
 

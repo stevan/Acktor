@@ -93,6 +93,11 @@ class Acktor::Dispatcher {
         $scheduler->schedule_message( $to, $event );
     }
 
+    method schedule ($timer) {
+        logger->log( DEBUG, "schedule( $timer )" ) if DEBUG;
+        $scheduler->schedule_timer($timer);
+    }
+
     ## ----------------------------------------------------
     ## Loop
     ## ----------------------------------------------------

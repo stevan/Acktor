@@ -5,23 +5,32 @@ use builtin      qw[ blessed refaddr true false ];
 
 use Acktor::Scheduler;
 use Acktor::Mailbox;
+use Acktor::Mailbox::Remote;
 use Acktor::Ref;
 use Acktor::Context;
 use Acktor::Props;
+use Acktor::PostOffice;
 
 use Acktor::System::Init;
 
 class Acktor::Dispatcher {
     use Acktor::Logging;
 
+    # XXX - this eventually should be the bound INET address
+    field $address :param = "$$:local";
+
+    field $post_office;
     field $scheduler;
     field %aliases;
 
     ADJUST {
-        $scheduler = Acktor::Scheduler->new;
+        $post_office = Acktor::PostOffice->new;
+        $scheduler   = Acktor::Scheduler->new;
     }
 
     ## ----------------------------------------------------
+
+    method address { $address }
 
     method lookup ($alias) { $aliases{ $alias } }
 
@@ -29,7 +38,7 @@ class Acktor::Dispatcher {
     ## Spawn
     ## ----------------------------------------------------
 
-    method spawn_actor ($props) {
+    method spawn_actor ($props, %options) {
 
         my $actor_ref = Acktor::Ref->new(
             props   => $props,
@@ -38,14 +47,30 @@ class Acktor::Dispatcher {
             )
         );
 
-        # TODO: add try/catch to catch anything throwm by Mailbox::new and rethrow a reasonable error
-        $scheduler->register( $actor_ref, Acktor::Mailbox->new( actor_ref => $actor_ref ) );
+        my $mailbox;
+        if ($options{remote}) {
+            my $destination = $options{destination} // die "You must supply a destination to spawn a remote actor";
+            logger->log( DEBUG, "spawn_remote_actor( $props ) => $actor_ref for $destination" ) if DEBUG;
+            $mailbox = Acktor::Mailbox::Remote->new(
+                actor_ref   => $actor_ref,
+                origin      => $address,
+                destination => $destination,
+                post_office => $post_office,
+            );
+        }
+        else {
+            logger->log( DEBUG, "spawn_actor( $props ) => $actor_ref" ) if DEBUG;
+            $mailbox = Acktor::Mailbox->new(
+                actor_ref => $actor_ref,
+                origin    => $address,
+            );
+        }
+
+        $scheduler->register( $actor_ref, $mailbox );
 
         if ( my $alias = $props->alias ) {
             $aliases{ $alias } = $actor_ref;
         }
-
-        logger->log( DEBUG, "spawn_actor( $props ) => $actor_ref" ) if DEBUG;
 
         return $actor_ref;
     }

@@ -8,18 +8,19 @@ use Acktor::Mailbox::Letter;
 class Acktor::Mailbox::Remote :isa(Acktor::Mailbox) {
     use Acktor::Logging;
 
-    field $origin      :param;
+    field $destination :param;
     field $post_office :param;
 
     method tick {
+        return unless $self->has_messages;
+
         logger->log( DEBUG, "tick ... posting messages to PostOffice" ) if DEBUG;
         $post_office->post_letters( map {
             Acktor::Mailbox::Letter->new(
-                origin      => $self->address, # FIXME: no more Mailbox::address method
-                destination => $origin,
+                origin      => $self->origin,
+                destination => $destination,
                 message     => $_,
             )
-        # FIXME: no more Mailbox::drain_messages method
         } $self->drain_messages );
     }
 }

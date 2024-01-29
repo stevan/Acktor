@@ -1,8 +1,66 @@
-# :Receive attribute
+<!---------------------------------------------------------------------------->
+# TODO
+<!---------------------------------------------------------------------------->
 
-We also need to parse so we can do `:Receive(Some::Event)` and dispatch accordingly.
+## Implement Interval Timers
 
+Think about this more.
+
+```ruby
+
+    $ctx->schedule(
+        event => event( *Hello::Goodbye => "Cruel World" ),
+        for   => $hello,
+        after => 2,
+    );
+
+    $ctx->schedule(
+        event => event( *Hello::Goodbye => "Cruel World" ),
+        for   => $hello,
+        every => 2,
+    );
+
+```
+
+<!---------------------------------------------------------------------------->
+# Remoting
+<!---------------------------------------------------------------------------->
+
+What is the PostOffice for??
+
+## Implement Watchers
+
+- in progress
+
+## Implement Node connection protocol
+
+>   Node1 = perl start-note.pl --at 3000
+>   Node2 = perl start-node.pl --at 3001 --connect 3000
+>
+>   Node2
+>       - connects to Node1
+>
+>   Node1
+>       - accepts connection from Node2
+>           - sends WelcomeMessage to Node2
+>
+>   Node2
+>       - reads WelcomeMessage
+>           - sends WelcomeResponse to Node1
+>
+>   Node1
+>       - reach WelcomeResponse
+>           - sends WelcomeRepsonse to Node2
+>
+>   WelcomeMessage
+>       - container sender for response
+>
+>   WelcomeResponse
+>       - contains list of important PIDs and their addresses
+
+<!---------------------------------------------------------------------------->
 # Await Blocks
+<!---------------------------------------------------------------------------->
 
 Make await blocks support two things:
 
@@ -82,7 +140,9 @@ class HTTPClient :isa(Acktor) {
 
 But the attributes do not work on methods at runtime, so that sucks.
 
+<!---------------------------------------------------------------------------->
 # Protocols
+<!---------------------------------------------------------------------------->
 
 Add protocols, that create the event symbols and use the `Receive` attribute to direct messages to
 a given method.
@@ -127,64 +187,6 @@ $client->send(
 );
 
 ```
-
-<!---------------------------------------------------------------------------->
-# TODO
-<!---------------------------------------------------------------------------->
-
-## Implement Interval Timers
-
-Think about this more.
-
-```ruby
-
-    $ctx->schedule(
-        event => event( *Hello::Goodbye => "Cruel World" ),
-        for   => $hello,
-        after => 2,
-    );
-
-    $ctx->schedule(
-        event => event( *Hello::Goodbye => "Cruel World" ),
-        for   => $hello,
-        every => 2,
-    );
-
-```
-
-## Re-Add the RemoteMailbox/PostOffice stuff
-
-- added back, but not working yet
-
-## Implement Watchers
-
-- in progress
-
-## Implement Node connection protocol
-
->   Node1 = perl start-note.pl --at 3000
->   Node2 = perl start-node.pl --at 3001 --connect 3000
->
->   Node2
->       - connects to Node1
->
->   Node1
->       - accepts connection from Node2
->           - sends WelcomeMessage to Node2
->
->   Node2
->       - reads WelcomeMessage
->           - sends WelcomeResponse to Node1
->
->   Node1
->       - reach WelcomeResponse
->           - sends WelcomeRepsonse to Node2
->
->   WelcomeMessage
->       - container sender for response
->
->   WelcomeResponse
->       - contains list of important PIDs and their addresses
 
 <!---------------------------------------------------------------------------->
 # TODO (examples)

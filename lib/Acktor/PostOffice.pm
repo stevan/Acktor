@@ -6,12 +6,12 @@ use builtin      qw[ blessed refaddr true false ];
 class Acktor::PostOffice {
     use Acktor::Logging;
 
-    field %registered;
+    # TODO:
+    # if this delivers messages, it will need mapping of destinations to sockets, etc.
 
-    method register ($dispatcher) {
-        # FIXME: the Dispatcher::address method does not exist anymore
-        $registered{ $dispatcher->address } = $dispatcher;
-    }
+    # Full address:
+    # <ID>:<ACTOR>@<PID>:local
+    # <ID>:<ACTOR>@<host>:<port>
 
     method post_letters (@letters) {
         logger->log( WARN, "Posting(".(join ", " => @letters)) if WARN;

@@ -14,6 +14,8 @@ class Acktor::Context {
     field $actor_ref;
     field @children;
 
+    method dispatcher { $dispatcher }
+
     method self   :lvalue { $actor_ref }
     method parent :lvalue {    $parent }
 

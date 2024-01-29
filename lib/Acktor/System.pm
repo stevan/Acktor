@@ -11,7 +11,7 @@ class Acktor::System {
     field $dispatcher;
 
     ADJUST {
-        $dispatcher  = Acktor::Dispatcher->new;
+        $dispatcher = Acktor::Dispatcher->new;
     }
 
     method run (%options) {

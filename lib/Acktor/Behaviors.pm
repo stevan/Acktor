@@ -64,15 +64,6 @@ our $CURRENT_MESSAGE;
 sub await ($symbol, $method) {
     $CURRENT_ACTOR // die 'Cannot call `await` outside of an active Acktor::Context';
 
-    #warn "HELLO await: $method";
-
-    #my @attrs = grep { $_ =~ /^Receive/ } grep defined, attributes::get($method);
-    #use Data::Dumper;
-    #warn Dumper \@attrs;
-    #warn 'ATTRS: ', join ', ' => @attrs;
-
-    #my ($symbol) = ($attrs[0] =~ /^Receive\((.*)\)$/);
-
     $CURRENT_ACTOR->become(
         Acktor::Behavior::Await->new(
             symbol   => $symbol,

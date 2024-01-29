@@ -1,9 +1,6 @@
 
 ## Receive attribute
 
-Currently we just check for it when the event is received. We need to do a pre-check
-to build a map of event-symbols accepted -> methods.
-
 We also need to parse so we can do `:Receive(Some::Event)` and dispatch accordingly.
 
 NOTE: does not work on anon methods, which is annoying
@@ -24,9 +21,9 @@ This means we need to manage the timeout, so we have to cancel if we get a match
     - is this a case for Protocols?
 
 ```ruby
+use Acktor::Behaviors;
 
 class HTTPServer :isa(Acktor) {
-    use Acktor::Behaviors;
 
     method Request :Receive ($method, $url) {
         sender->send( event *Response => '200 OK' );
@@ -34,7 +31,6 @@ class HTTPServer :isa(Acktor) {
 }
 
 class HTTPClient :isa(Acktor) {
-    use Acktor::Behaviors;
 
     field $server;
 
@@ -60,6 +56,34 @@ $client->send(
 
 
 ```
+
+Would love it if it could be this:
+
+```ruby
+
+class HTTPClient :isa(Acktor) {
+
+    field $server;
+
+    method Request :Receive ($url) {
+
+        $server->send( event *HTTP::Request => ( GET => $url ) );
+
+        await { timeout => 10 },
+            method :Receive(*HTTPServer::Response) ($body) {
+                # ... handle the body
+            },
+            method :Receive(*Timeout) {
+                # timeout!
+            }
+        ;
+    }
+}
+
+
+```
+
+But the attributes do not work on methods at runtime, so that sucks.
 
 # Protocols
 

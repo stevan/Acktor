@@ -8,11 +8,8 @@ use Data::Dumper;
 use Test::More;
 
 use Acktor;
-use Acktor::Behaviors;
-
 use Acktor::System;
-use Acktor::Props;
-use Acktor::Logging;
+use Acktor::Behaviors;
 
 class Pong :isa(Acktor) {
     use Test::More;

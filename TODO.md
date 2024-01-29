@@ -8,36 +8,20 @@ We also need to parse so we can do `:Receive(Some::Event)` and dispatch accordin
 
 NOTE: does not work on anon methods, which is annoying
 
-## Implement Interval Timers
-
-Think about this more.
-
-```ruby
-
-    $ctx->schedule(
-        event => event( *Hello::Goodbye => "Cruel World" ),
-        for   => $hello,
-        after => 2,
-    );
-
-    $ctx->schedule(
-        event => event( *Hello::Goodbye => "Cruel World" ),
-        for   => $hello,
-        every => 2,
-    );
-
-```
-
-
 # Await Blocks
 
-Here in this example we have the `await` function, which will have the affect of changing the
-behavior of the system, to just be a receiver of the given event. After receiving this response
-it will revert back to the previous behavior.
+Make await blocks support two things:
 
-It effectively blocks that instance until the right symbol arrives. Any other messages will
-result in an error.
+- multiple event cases
+- timeouts (which are delivered as messages to the block)
 
+This means we need to manage the timeout, so we have to cancel if we get a match.
+
+- also decide how Timeout events will look.
+    - do we use strings?
+    - known constant (ex: `*Acktor::Timers::Timeout`)?
+    - import a known constant so you can say `*Timeout`
+    - is this a case for Protocols?
 
 ```ruby
 
@@ -56,11 +40,16 @@ class HTTPClient :isa(Acktor) {
 
     method Request :Receive ($url) {
 
-        $server->send( event *HTTPServer::Request => ( GET => $url ) );
+        $server->send( event *HTTP::Request => ( GET => $url ) );
 
-        await *HTTPServer::Response => method :Receive ($body) {
-            ...
-        };
+        await { timeout => 10 },
+            *HTTPServer::Response => method :Receive ($body) {
+                # ... handle the body
+            },
+            'Timeout' => method :Receive {
+                # timeout!
+            }
+        ;
     }
 }
 
@@ -79,7 +68,7 @@ a given method.
 
 ```ruby
 
-class HTTP {
+class Acktor::Protocol::HTTP {
     use Acktor::Protocol;
 
     event *Request;
@@ -88,14 +77,16 @@ class HTTP {
 
 class HTTPServer :isa(Acktor) {
     use Acktor::Behaviors;
+    use Acktor::Protocol => 'HTTP';
 
-    method Request :Receive(HTTP::Request) ($method, $url) {
+    method Request :Receive(*HTTP::Request) ($method, $url) {
         sender->send( event *HTTP::Response => '200 OK' );
     }
 }
 
 class HTTPClient :isa(Acktor) {
     use Acktor::Behaviors;
+    use Acktor::Protocol => 'HTTP';
 
     field $server;
 
@@ -116,35 +107,74 @@ $client->send(
 
 ```
 
-An example of an `await` that takes multiple different cases and will handle them accordingly. Not 100% sure this is workable, but it is a sketch. One issue is that with a single case `await` (like above) the reverseal (`unbecome`) is
-obvious. In this it would need to be manual.
+<!---------------------------------------------------------------------------->
+# TODO
+<!---------------------------------------------------------------------------->
+
+## Implement Interval Timers
+
+Think about this more.
 
 ```ruby
 
-class HTTPClient :isa(Acktor) {
-    use Acktor::Behaviors;
+    $ctx->schedule(
+        event => event( *Hello::Goodbye => "Cruel World" ),
+        for   => $hello,
+        after => 2,
+    );
 
-    field $server;
-
-    method Request :Receive ($url) {
-
-        $server->send( event *HTTP::Request => ( GET => $url ) );
-
-        await { timeout => 10 },
-            *HTTP::Response => method :Receive ($body) {
-                # ... handle the body, after which we go back to
-            },
-            *HTTPClient::Request => method :Receive ($url) {
-                # ... and buffer any of those incoming requests
-            },
-            'Timeout' => method :Receive {
-                # timeout!
-            }
-        ;
-    }
-}
+    $ctx->schedule(
+        event => event( *Hello::Goodbye => "Cruel World" ),
+        for   => $hello,
+        every => 2,
+    );
 
 ```
+
+## Re-Add the RemoteMailbox/PostOffice stuff
+
+- added back, but not working yet
+
+## Implement Watchers
+
+- in progress
+
+## Implement Node connection protocol
+
+>   Node1 = perl start-note.pl --at 3000
+>   Node2 = perl start-node.pl --at 3001 --connect 3000
+>
+>   Node2
+>       - connects to Node1
+>
+>   Node1
+>       - accepts connection from Node2
+>           - sends WelcomeMessage to Node2
+>
+>   Node2
+>       - reads WelcomeMessage
+>           - sends WelcomeResponse to Node1
+>
+>   Node1
+>       - reach WelcomeResponse
+>           - sends WelcomeRepsonse to Node2
+>
+>   WelcomeMessage
+>       - container sender for response
+>
+>   WelcomeResponse
+>       - contains list of important PIDs and their addresses
+
+<!---------------------------------------------------------------------------->
+# TODO (examples)
+<!---------------------------------------------------------------------------->
+
+- Make a distributed Hash Table
+    - https://www.youtube.com/watch?v=1QdKhNpsj8M&ab_channel=number0
+
+<!---------------------------------------------------------------------------->
+# TO ADD (MAYBE)
+<!---------------------------------------------------------------------------->
 
 # Futures
 
@@ -183,61 +213,6 @@ class HTTPClient :isa(Acktor) {
 # https://en.wikipedia.org/wiki/Futures_and_promises#Semantics_of_futures_in_the_actor_model
 # https://docs.oracle.com/en/java/javase/19/docs/api/java.base/java/util/concurrent/Future.html
 
-
-<!---------------------------------------------------------------------------->
-# TODO
-<!---------------------------------------------------------------------------->
-
-## Re-Add the RemoteMailbox/PostOffice stuff
-
-- get it from the history
-    - it is completely broken
-        - but the theory is sound
-    - re-add it and make it work
-
-- NOTE: this should help answer some questions about where to
-  take the watchers stuff.
-
-## Implement Node connection protocol
-
->   Node1 = perl start-note.pl --at 3000
->   Node2 = perl start-node.pl --at 3001 --connect 3000
->
->   Node2
->       - connects to Node1
->
->   Node1
->       - accepts connection from Node2
->           - sends WelcomeMessage to Node2
->
->   Node2
->       - reads WelcomeMessage
->           - sends WelcomeResponse to Node1
->
->   Node1
->       - reach WelcomeResponse
->           - sends WelcomeRepsonse to Node2
->
->   WelcomeMessage
->       - container sender for response
->
->   WelcomeResponse
->       - contains list of important PIDs and their addresses
-
-## Implement Watchers
-
-- in progress
-
-<!---------------------------------------------------------------------------->
-# TODO (examples)
-<!---------------------------------------------------------------------------->
-
-- Make a distributed Hash Table
-    - https://www.youtube.com/watch?v=1QdKhNpsj8M&ab_channel=number0
-
-<!---------------------------------------------------------------------------->
-# TO ADD (MAYBE)
-<!---------------------------------------------------------------------------->
 
 - Protocols for cross Process communication
     - Spawn

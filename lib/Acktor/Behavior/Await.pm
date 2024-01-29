@@ -10,7 +10,7 @@ class Acktor::Behavior::Await :isa(Acktor::Behavior) {
     field $symbol   :param;
     field $receiver :param;
 
-    method receive ($actor, $context, $message) {
+    method accept ($actor, $context, $message) {
 
         die "Can only accept messages of ($symbol), not (".$message->symbol.")"
             unless $message->symbol eq $symbol;

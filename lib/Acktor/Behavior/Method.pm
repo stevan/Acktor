@@ -7,24 +7,11 @@ use Acktor::Behavior;
 
 class Acktor::Behavior::Method :isa(Acktor::Behavior) {
 
-    method receive ($actor, $context, $message) {
-        my $method = $message->symbol;
-        my $ref    = $actor->can( $method );
+    field $receivers :param;
 
-        die "Method ($method) not found in ($actor)" unless $ref;
-
-        # TODO:
-        # do this attribute check earlier, and collect list of
-        # valid methods. Which will change how this whole
-        # thing behaviors, so keep that in mind.
-        my @attrs = grep { $_ && $_ =~ /^Receive/ } attributes::get($ref);
-        die "Method must be a Receiver" unless @attrs;
-
-        # TODO:
-        # if we have a pre built set of methods with attributes
-        # then we can parse the attribute to see if we need to accept
-        # a different event type, and adjust the set of methods
-        # accordingly.
+    method accept ($actor, $context, $message) {
+        my $symbol = $message->symbol;
+        my $ref    = $receivers->{ $symbol } || die "Receiver ($symbol) not found in ($actor)";
 
         local $Acktor::Behaviors::CURRENT_ACTOR   = $actor;
         local $Acktor::Behaviors::CURRENT_CONTEXT = $context;

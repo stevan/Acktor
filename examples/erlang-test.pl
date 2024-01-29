@@ -23,7 +23,7 @@ class ErlangTest :isa(Acktor) {
     field $id   :param;
     field $next :param = undef;
 
-    method Ping ($count) {
+    method Ping :Receive ($count) {
         if (defined $next) {
             $next->send( event *Ping => $count + 1 );
         }

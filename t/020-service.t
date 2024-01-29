@@ -52,7 +52,7 @@ class Client :isa(Acktor) {
         # add them manually  like so, which is gross
         #attributes::->import( __PACKAGE__, $m, 'Receive(*Service::Response)' );
 
-        await *Service::Response => method :Receive(*Service::Response) ($value) {
+        await *Service::Response => method :Receive ($value) {
             logger->log( INFO, "Got Response($value)") if INFO;
             $RESPONSE = $value;
 

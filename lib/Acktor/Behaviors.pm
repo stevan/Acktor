@@ -36,7 +36,14 @@ sub Acktor::MODIFY_CODE_ATTRIBUTES ($pkg, $code, @attrs) {
     map  {
         if ($_ =~ /^Receive/) {
             $_attributes{ $pkg }{ $code } = $_;
-            $_methods{ $pkg }{ '*'.Sub::Util::subname( $code ) } = $code;
+            my $symbol;
+            if ($_ =~ /^Receive\((.*)\)$/ ) {
+                $symbol = $1;
+            }
+            else {
+                $symbol = '*'.Sub::Util::subname( $code );
+            }
+            $_methods{ $pkg }{ $symbol } = $code;
         }
         $_;
     }
@@ -45,6 +52,13 @@ sub Acktor::MODIFY_CODE_ATTRIBUTES ($pkg, $code, @attrs) {
 
 my %_behaviors;
 sub behavior_for ($, $class) {
+    #use Data::Dumper;
+    #warn Dumper {
+    #    class      => $class,
+    #    attributes => \%_attributes,
+    #    methods    => \%_methods,
+    #};
+
     $_behaviors{$class} //= Acktor::Behavior::Method->new(
         receivers => (
             $_methods{ $class }

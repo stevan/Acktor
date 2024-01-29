@@ -27,7 +27,7 @@ class Hello :isa(Acktor) {
         $GREETED++;
     }
 
-    method Goodbye :Receive ($body) {
+    method TheEnd :Receive(*Hello::Goodbye) ($body) {
         logger->log( INFO, ">> Goodbye $body" ) if INFO;
         is($body, 'Cruel World', '... got the expected greeting');
         $GOODBYE++;

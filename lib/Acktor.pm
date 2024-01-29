@@ -24,8 +24,8 @@ class Acktor {
 
     # ...
 
-    method apply ($ctx, $message) {
-        ($behaviors[0] // $behavior)->accept( $self, $ctx, $message );
+    method accept ($ctx, $message) {
+        return ($behaviors[0] // $behavior)->accept( $self, $ctx, $message );
     }
 }
 

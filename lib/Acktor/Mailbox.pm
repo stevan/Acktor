@@ -9,11 +9,14 @@ class Acktor::Mailbox {
     field $actor_ref :param;
 
     field $actor;
+
     field @messages;
     field @deadletters;
-    field $stopped = false;
+
+    field $queue;
 
     ADJUST {
+        $queue = \@messages;
         $actor = $actor_ref->props->new_actor;
     }
 
@@ -21,11 +24,8 @@ class Acktor::Mailbox {
 
     # ...
 
-    method resume { $stopped = false }
-    method stop   { $stopped = true  }
-
-    method is_stopped {  $stopped }
-    method is_waiting { !$stopped }
+    method resume { $queue = \@messages     }
+    method stop   { $queue = \@deadletters  }
 
     # ... messages
 
@@ -34,11 +34,7 @@ class Acktor::Mailbox {
     method all_messages    {           @messages }
     method has_messages    { !! scalar @messages }
     method enqueue_message ($message) {
-        if ($stopped) {
-            push @deadletters => $message;
-            return;
-        }
-        push @messages => $message;
+        push @$queue => $message;
     }
 
     # ... tick
@@ -52,16 +48,13 @@ class Acktor::Mailbox {
 
             my $context = $actor_ref->context;
             while (@msgs) {
-                if ($stopped) {
-                    push @deadletters => @msgs;
-                    return;
-                }
-
                 my $message = shift @msgs;
                 try {
-                    $actor->apply($context, $message);
+                    unless ($actor->accept($context, $message)) {
+                        push @deadletters => $message;
+                    }
                 } catch ($e) {
-                    logger->log( ERROR, "actor::apply($message) failed with ($e)" ) if ERROR;
+                    logger->log( ERROR, "actor::accept($message) failed with ($e)" ) if ERROR;
                     # TODO: decide how to handle this:
                     #       - resume
                     #       - restart

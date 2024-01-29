@@ -1,9 +1,6 @@
-
-## Receive attribute
+# :Receive attribute
 
 We also need to parse so we can do `:Receive(Some::Event)` and dispatch accordingly.
-
-NOTE: does not work on anon methods, which is annoying
 
 # Await Blocks
 
@@ -202,9 +199,16 @@ Think about this more.
 
 # Futures
 
-Whereas `await` blocks the actor and only accepts the expected event, which is not always desireable. The `future` keyword would, behind the scenes, create a Future Actor instance, whcih would get the response, and call the callbacks which are set with `is_done`, etc.
+A future will return a promise (Thenable) that is connected to an Actor instance.
+The Actor instance sends the message and awaits the result, assuming the actor
+being called will respond to `sender`. When this actor instance gets a result, then
+it resolves the promise it is attached to.
 
-THe advantage of the `future` is that it does not affect the actors state. Whereas `await` affects the state of the instance.
+The advantage of this is that you can launch multiple futures at once, and then
+collect them using the `collect` function turn them into a single promise.
+
+Another advantage of the `future` is that it does not affect the actors state.
+Whereas `await` affects the state of the instance via `become`.
 
 ```ruby
 
@@ -215,15 +219,23 @@ class HTTPClient :isa(Acktor) {
 
     method Request :Receive ($url) {
 
-        my $f = future[*HTTP::Response] => (
-            to    => $server,
-            event => event( *HTTP::Request => ( GET => $url ) ),
+        my $f1 = future[*HTTP::Response] => (
+            to     => $server,
+            event  => event( *HTTP::Request => ( GET => $url1 ) ),
+            timout => 3,
         );
 
-        $f->is_done(method { ... })
-          ->is_error(method { ... })
-          ->timeout(5)
-          ->go; # or something else to say "start this future"
+        my $f2 = future[*HTTP::Response] => (
+            to     => $server,
+            event  => event( *HTTP::Request => ( GET => $url2 ) ),
+            timout => 5,
+        );
+
+        # this is async, it does not block
+        collect($f1, $f2)
+            ->on_success(method ($results) { ... })
+            ->on_error(method ($error)   { ... })
+            ->on_timeout(method { ... });
     }
 }
 

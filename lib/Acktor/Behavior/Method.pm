@@ -11,14 +11,17 @@ class Acktor::Behavior::Method :isa(Acktor::Behavior) {
 
     method accept ($actor, $context, $message) {
         my $symbol = $message->symbol;
-        my $ref    = $receivers->{ $symbol } || die "Receiver ($symbol) not found in ($actor)";
+        my $ref    = $receivers->{ $symbol } || return false;
 
         local $Acktor::Behaviors::CURRENT_ACTOR   = $actor;
         local $Acktor::Behaviors::CURRENT_CONTEXT = $context;
         local $Acktor::Behaviors::CURRENT_MESSAGE = $message;
 
         $actor->$ref( $message->payload->@* );
+
+        return true;
     }
+
 }
 
 __END__

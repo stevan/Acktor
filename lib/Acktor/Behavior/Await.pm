@@ -12,8 +12,7 @@ class Acktor::Behavior::Await :isa(Acktor::Behavior) {
 
     method accept ($actor, $context, $message) {
 
-        die "Can only accept messages of ($symbol), not (".$message->symbol.")"
-            unless $message->symbol eq $symbol;
+        return false unless $message->symbol eq $symbol;
 
         local $Acktor::Behaviors::CURRENT_ACTOR   = $actor;
         local $Acktor::Behaviors::CURRENT_CONTEXT = $context;
@@ -22,6 +21,8 @@ class Acktor::Behavior::Await :isa(Acktor::Behavior) {
         $actor->$receiver( $message->payload->@* );
 
         $actor->unbecome;
+
+        return true;
     }
 }
 

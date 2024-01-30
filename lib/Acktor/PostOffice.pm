@@ -9,10 +9,21 @@ class Acktor::PostOffice {
 
 =pod
 
+Connection Protocol?
+    - Welcome messages
+        - exchange list of aliased Actors that can be called from that node
+
+Wire Format?
+    - netstring JSON?
+
+-----------------------------------------------------------
+
 Address (url) formats:
     local  - <ID>:<ACTOR>@<PID>:local
     UNIX   - <ID>:<ACTOR>@<PID>:<path>
     INET   - <ID>:<ACTOR>@<host>:<port>
+
+-----------------------------------------------------------
 
 - System owns PostOffice
     - will pass arguments such as:
@@ -47,6 +58,8 @@ Address (url) formats:
         - writing
             - for all watched connections
                 - write letters from connection outbox
+
+-----------------------------------------------------------
 
 =cut
 

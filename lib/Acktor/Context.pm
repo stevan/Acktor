@@ -12,12 +12,14 @@ class Acktor::Context {
     field $parent     :param = undef;
 
     field $actor_ref;
+    field $mailbox;
     field @children;
 
     method dispatcher { $dispatcher }
 
-    method self   :lvalue { $actor_ref }
-    method parent :lvalue {    $parent }
+    method self    :lvalue { $actor_ref }
+    method parent  :lvalue {    $parent }
+    method mailbox :lvalue {   $mailbox }
 
     method has_self   { defined $actor_ref }
     method has_parent { defined $parent    }

@@ -17,6 +17,8 @@ class Acktor::Mailbox {
     field $queue;
 
     ADJUST {
+        $actor_ref->context->mailbox = $self;
+
         $queue = \@messages;
         $actor = $actor_ref->props->new_actor;
     }

@@ -18,7 +18,15 @@ class Acktor::Node::Listener :isa(Acktor::Node::Watcher) {
         # collect as many as are waiting ...
         while (my $conn = $self->socket->accept) {
             logger->log( INFO, "Adding new ServerConnection" ) if INFO;
-            $node->add_watcher( Acktor::Node::Connection->new( socket => $conn ) );
+            $node->add_watcher(
+                Acktor::Node::Connection->new(
+                    socket     => $conn,
+                    on_message => sub ($w, $msg) {
+                        say "SERVER GOT $msg";
+                        $w->to_write("Goodbye ($msg)");
+                    }
+                )
+            );
         }
     }
 

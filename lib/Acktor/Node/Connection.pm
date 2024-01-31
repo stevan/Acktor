@@ -9,6 +9,8 @@ use Acktor::Node::BufferedWriter;
 class Acktor::Node::Connection :isa(Acktor::Node::Watcher) {
     use Acktor::Logging;
 
+    field $on_message :param;
+
     field $reader;
     field $writer;
 
@@ -34,8 +36,7 @@ class Acktor::Node::Connection :isa(Acktor::Node::Watcher) {
         if ($reader->read( $self->socket )) {
             my ($message) = $reader->fetch_messages;
             logger->log( INFO, "Got ($message) on Connection from Peer" ) if INFO;
-            logger->log( INFO, "Responding from Peer to Connection" ) if INFO;
-            $self->to_write($message);
+            $self->$on_message($message);
         }
     }
 

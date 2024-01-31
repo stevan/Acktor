@@ -4,6 +4,7 @@ use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
 class Acktor::Node::BufferedReader {
+    use Acktor::Logging;
 
     use constant MAX_BUFFER => 1024;
 
@@ -22,7 +23,10 @@ class Acktor::Node::BufferedReader {
         $socket->sysread( $buffer, MAX_BUFFER );
 
         if (length $buffer) {
-            push @messages => $buffer;
+            logger->log( DEBUG, "Reading messages ...[ $buffer ]" ) if DEBUG;
+
+            my ($length, $body) = $buffer =~ /^(\d*)\:(.*)$/;
+            push @messages => $body;
             $buffer = '';
         }
 

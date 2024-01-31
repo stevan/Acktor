@@ -32,7 +32,7 @@ class Acktor::Node {
         $self->add_watcher( $listener );
     }
 
-    method connect_to ($host, $port, $on_message) {
+    method connect_to ($host, $port, $on_messages) {
 
         my $socket = IO::Socket::INET->new(
             PeerHost => $host,
@@ -41,8 +41,8 @@ class Acktor::Node {
         ) or die "Failed to create socket for host($host) port($port): $!";
 
         my $conn = Acktor::Node::Connection->new(
-            socket     => $socket,
-            on_message => $on_message
+            socket      => $socket,
+            on_messages => $on_messages
         );
         $self->add_watcher( $conn );
 

@@ -20,8 +20,9 @@ class Acktor::Node::Listener :isa(Acktor::Node::Watcher) {
             logger->log( INFO, "Adding new ServerConnection" ) if INFO;
             $node->add_watcher(
                 Acktor::Node::Connection->new(
-                    socket     => $conn,
-                    on_message => sub ($w, $msg) {
+                    socket      => $conn,
+                    on_messages => sub ($w, @msgs) {
+                        my ($msg) = @msgs;
                         say "SERVER GOT $msg";
                         $w->to_write("Goodbye ($msg)");
                     }

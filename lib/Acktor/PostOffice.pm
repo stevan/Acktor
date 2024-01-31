@@ -63,10 +63,6 @@ Address (url) formats:
 
 =cut
 
-    method deliver_letters {
-        logger->log( WARN, "Delivering...") if WARN;
-    }
-
     method post_letters (@letters) {
         logger->log( WARN, "Posting(".(join ", " => @letters)) if WARN;
         # TODO - look through the letters and try to deliver them

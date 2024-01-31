@@ -5,16 +5,21 @@ use builtin      qw[ blessed refaddr true false ];
 
 class Acktor::Node::Watcher {
 
+    field $socket :param;
+
     field $reading = false;
     field $writing = false;
+
+    ADJUST {
+        $socket->autoflush(1);
+        $socket->blocking(0);
+    }
 
     method is_reading :lvalue { $reading }
     method is_writing :lvalue { $writing }
 
-    # socket access and preparation
-
-    method init_socket;
-    method socket;
+    # socket access
+    method socket { $socket }
 
     # read/write events
 
@@ -23,6 +28,6 @@ class Acktor::Node::Watcher {
 
     # socket info
 
-    method address      { join ":" => grep defined, map { $_->sockhost, $_->sockport } $self->socket }
-    method peer_address { join ":" => grep defined, map { $_->peerhost, $_->peerport } $self->socket }
+    method address      { join ":" => grep defined, map { $_->sockhost, $_->sockport } $socket }
+    method peer_address { join ":" => grep defined, map { $_->peerhost, $_->peerport } $socket }
 }

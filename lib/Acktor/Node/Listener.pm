@@ -3,35 +3,12 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
-use Acktor::Node::ServerConnection;
+use Acktor::Node::Connection;
 
 class Acktor::Node::Listener :isa(Acktor::Node::Watcher) {
     use Acktor::Logging;
 
-    use IO::Socket;
-    use IO::Socket::INET;
-
-    field $host :param;
-    field $port :param;
-
-    field $socket;
-
-    method socket { $socket }
-
-    method init_socket {
-        die 'Cannot call create_socket once' if $socket;
-
-        $socket = IO::Socket::INET->new(
-            Listen    => SOMAXCONN,
-            LocalAddr => $host,
-            LocalPort => $port,
-            Proto     => 'tcp',
-            ReuseAddr => 1,
-        ) or die "Failed to create listen port at $port: $!";
-
-        $socket->autoflush(1);
-        $socket->blocking(0);
-
+    ADJUST {
         $self->is_reading = true;
     }
 
@@ -39,14 +16,9 @@ class Acktor::Node::Listener :isa(Acktor::Node::Watcher) {
         logger->log( DEBUG, "Got read event for Listener: ".$self->address ) if DEBUG;
 
         # collect as many as are waiting ...
-        while (my $conn = $socket->accept) {
-
+        while (my $conn = $self->socket->accept) {
             logger->log( INFO, "Adding new ServerConnection" ) if INFO;
-
-            my $server = Acktor::Node::ServerConnection->new( socket => $conn );
-            $server->init_socket;
-
-            $node->add_watcher( $server );
+            $node->add_watcher( Acktor::Node::Connection->new( socket => $conn ) );
         }
     }
 

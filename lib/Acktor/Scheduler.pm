@@ -114,6 +114,8 @@ class Acktor::Scheduler {
             $tick++;
             logger->line( "scheduler::tick($tick)" ) if DEBUG;
 
+            # FIXME: this logic is confusing
+
             if ( scalar @to_be_run == 0 && scalar keys %to_be_run == 0 && !$timers->has_timers ) {
                 last if $run_until_done;
                 logger->log( DEBUG, '=>> nothing to run, ... yet' ) if DEBUG;

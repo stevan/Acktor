@@ -6,10 +6,10 @@ use builtin      qw[ blessed refaddr true false ];
 
 use Data::Dumper;
 
-use Acktor::Node;
+use Acktor::PostOffice;
 
-my $node2 = Acktor::Node->new( host => '0.0.0.0', port => 3000 );
-$node2->start_listening;
+my $node2 = Acktor::PostOffice->new;
+$node2->listen_on('0.0.0.0', 3000);
 
 my $conn2a = $node2->connect_to(
     '0.0.0.0', 3000,

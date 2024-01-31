@@ -24,7 +24,7 @@ class Acktor::Dispatcher {
     field %aliases;
 
     ADJUST {
-        $post_office = Acktor::PostOffice->new;
+        $post_office = Acktor::PostOffice->new( dispatcher => $self );
         $scheduler   = Acktor::Scheduler->new;
     }
 

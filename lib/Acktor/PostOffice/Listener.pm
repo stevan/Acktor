@@ -3,9 +3,9 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
-use Acktor::Node::Connection;
+use Acktor::PostOffice::Connection;
 
-class Acktor::Node::Listener :isa(Acktor::Node::Watcher) {
+class Acktor::PostOffice::Listener :isa(Acktor::PostOffice::Watcher) {
     use Acktor::Logging;
 
     ADJUST {
@@ -18,8 +18,9 @@ class Acktor::Node::Listener :isa(Acktor::Node::Watcher) {
         # collect as many as are waiting ...
         while (my $conn = $self->socket->accept) {
             logger->log( INFO, "Adding new ServerConnection" ) if INFO;
+
             $node->add_watcher(
-                Acktor::Node::Connection->new(
+                Acktor::PostOffice::Connection->new(
                     socket      => $conn,
                     on_messages => sub ($w, @msgs) {
                         my ($msg) = @msgs;

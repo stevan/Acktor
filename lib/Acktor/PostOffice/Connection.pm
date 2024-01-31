@@ -3,10 +3,10 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
-use Acktor::Node::BufferedReader;
-use Acktor::Node::BufferedWriter;
+use Acktor::PostOffice::BufferedReader;
+use Acktor::PostOffice::BufferedWriter;
 
-class Acktor::Node::Connection :isa(Acktor::Node::Watcher) {
+class Acktor::PostOffice::Connection :isa(Acktor::PostOffice::Watcher) {
     use Acktor::Logging;
 
     field $on_messages :param;
@@ -15,8 +15,8 @@ class Acktor::Node::Connection :isa(Acktor::Node::Watcher) {
     field $writer;
 
     ADJUST {
-        $reader = Acktor::Node::BufferedReader->new;
-        $writer = Acktor::Node::BufferedWriter->new;
+        $reader = Acktor::PostOffice::BufferedReader->new;
+        $writer = Acktor::PostOffice::BufferedWriter->new;
 
         $self->is_reading = true;
         $self->is_writing = false;

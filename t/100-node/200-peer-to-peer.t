@@ -6,8 +6,8 @@ use builtin      qw[ blessed refaddr true false ];
 
 use Data::Dumper;
 
-use Acktor::Node;
-use Acktor::Node::ClientConnection;
+use Acktor::PostOffice;
+use Acktor::PostOffice::ClientConnection;
 
 if (my $pid = fork()) {
     say "FORKED $pid";

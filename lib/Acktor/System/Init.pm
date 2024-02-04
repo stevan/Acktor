@@ -18,6 +18,8 @@ class Acktor::System::Init :isa(Acktor) {
             # TODO: this should trigger the shutdown of the system
         }
     }
+
+    method Ping :Receive { sender->send( event *Ping ) }
 }
 
 

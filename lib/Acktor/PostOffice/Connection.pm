@@ -9,7 +9,7 @@ use Acktor::PostOffice::BufferedWriter;
 class Acktor::PostOffice::Connection :isa(Acktor::PostOffice::Watcher) {
     use Acktor::Logging;
 
-    field $on_messages :param;
+    #field $on_letters :param;
 
     field $reader;
     field $writer;
@@ -23,24 +23,34 @@ class Acktor::PostOffice::Connection :isa(Acktor::PostOffice::Watcher) {
     }
 
     method to_write ($data) {
+        logger->log( DEBUG, "to_write called with ($data)" ) if DEBUG;
         $self->is_writing = true;
-        $writer->push_messages($data);
+        $writer->send_letters($data);
     }
 
-    method handle_read ($node) {
+    method handle_read ($post_office) {
         logger->log( DEBUG, "Got read event for Connection: "
                 . $self->address
                 . " connected to PeerConnection: "
                 . $self->peer_address) if DEBUG;
 
         if ($reader->read( $self->socket )) {
-            my @messages = $reader->fetch_messages;
-            logger->log( INFO, "Got (".(join ', ' => @messages).") on Connection from Peer" ) if INFO;
-            $self->$on_messages(@messages);
+            my @letters = $reader->fetch_letters;
+            logger->log( INFO, "Got (".(join ', ' => @letters).") on Connection from Peer" ) if INFO;
+            #$self->$on_letters(@letters);
+            $post_office->deliver_letters( @letters );
+        }
+
+        if ( my $error = $reader->get_error ) {
+            if ($error == $reader->EOF) {
+                $self->is_reading = false;
+                $self->is_writing = false;
+                # TODO - do something here ... dunno what yet
+            }
         }
     }
 
-    method handle_write ($node) {
+    method handle_write ($post_office) {
         logger->log( DEBUG, "Got write event for Connection: "
                 . $self->address
                 . " connected to PeerConnection: "

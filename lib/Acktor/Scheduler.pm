@@ -8,6 +8,8 @@ use Acktor::Timers;
 class Acktor::Scheduler {
     use Acktor::Logging;
 
+    field $post_office :param = undef;
+
     field $timers;
     field %mailboxes;
     field @deadletters;
@@ -127,9 +129,16 @@ class Acktor::Scheduler {
             if ( scalar @to_be_run == 0 && scalar keys %to_be_run == 0 ) {
                 if (my $wait = $timers->should_wait) {
                     logger->log( DEBUG, "... waiting ($wait)" ) if DEBUG;
-                    $timers->sleep( $wait );
+                    if ($post_office) {
+                        $post_office->tick( $wait );
+                    }
+                    else {
+                        $timers->sleep( $wait );
+                    }
                 }
             }
+
+            $post_office->tick( 0 );
         }
 
         logger->line( "scheduler::exit" ) if DEBUG;

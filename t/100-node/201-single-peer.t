@@ -14,12 +14,12 @@ $node2->listen_on('0.0.0.0', 3000);
 my $conn2a = $node2->connect_to(
     '0.0.0.0', 3000,
     sub ($w, @msgs) {
-        my ($msg) = @msgs;
-        say "CLIENT GOT $msg";
+        say "CLIENT GOT ".join ', ' => @msgs;
     }
 );
 
-$conn2a->to_write('Hello');
+$conn2a->to_write('{ "symbol" : "*Hello1" }');
+$conn2a->to_write('{ "symbol" : "*Hello2" }');
 
 foreach (0 .. 10) {
     say '-('.$$.' = '.$_.')-------------------------------';

@@ -24,7 +24,7 @@ class Acktor::Event {
 
     field $_packed;
     method pack {
-        $_packed //= { symbol => $symbol, payload => $payload };
+        $_packed //= { symbol => "$symbol", payload => $payload };
     }
 }
 

@@ -16,23 +16,22 @@ use Acktor::System::Init;
 class Acktor::Dispatcher {
     use Acktor::Logging;
 
-    # XXX - this eventually should be the bound INET address
-    field $address :param = "$$:local";
+    field $address;
 
     field $post_office;
     field $scheduler;
-    field %aliases;
+    field %lookup;
 
     ADJUST {
         $post_office = Acktor::PostOffice->new( dispatcher => $self );
-        $scheduler   = Acktor::Scheduler->new;
+        $scheduler   = Acktor::Scheduler->new( post_office => $post_office );
     }
 
     ## ----------------------------------------------------
 
     method address { $address }
 
-    method lookup ($alias) { $aliases{ $alias } }
+    method lookup ($alias) { $lookup{ $alias } }
 
     ## ----------------------------------------------------
     ## Spawn
@@ -49,11 +48,12 @@ class Acktor::Dispatcher {
 
         my $mailbox;
         if ($options{remote}) {
-            my $destination = $options{destination} // die "You must supply a destination to spawn a remote actor";
+            my $destination = $options{destination}
+                // die "You must supply a destination to spawn a remote actor";
+
             logger->log( DEBUG, "spawn_remote_actor( $props ) => $actor_ref for $destination" ) if DEBUG;
             $mailbox = Acktor::Mailbox::Remote->new(
                 actor_ref   => $actor_ref,
-                origin      => $address,
                 destination => $destination,
                 post_office => $post_office,
             );
@@ -62,14 +62,15 @@ class Acktor::Dispatcher {
             logger->log( DEBUG, "spawn_actor( $props ) => $actor_ref" ) if DEBUG;
             $mailbox = Acktor::Mailbox->new(
                 actor_ref => $actor_ref,
-                origin    => $address,
             );
         }
 
         $scheduler->register( $actor_ref, $mailbox );
 
+        $lookup{ $actor_ref->pid } = $actor_ref;
+
         if ( my $alias = $props->alias ) {
-            $aliases{ $alias } = $actor_ref;
+            $lookup{ $alias } = $actor_ref;
         }
 
         return $actor_ref;
@@ -78,8 +79,10 @@ class Acktor::Dispatcher {
     method despawn_actor ($actor_ref) {
         logger->log( DEBUG, "despawn_actor( $actor_ref )" ) if DEBUG;
 
+        delete $lookup{ $actor_ref->pid };
+
         if ( my $alias = $actor_ref->props->alias ) {
-            delete $aliases{ $alias };
+            delete $lookup{ $alias };
         }
 
         $scheduler->suspend( $actor_ref );
@@ -129,6 +132,26 @@ class Acktor::Dispatcher {
 
     method run (%options) {
         logger->line( "dispatcher::start" ) if DEBUG;
+
+        if (my $listen_addr = delete $options{listen_on}) {
+            $post_office->listen_on( split ':' => $listen_addr );
+            $address = $listen_addr;
+        }
+
+        if (my $connections = delete $options{connect_to}) {
+            foreach my $c (@$connections) {
+                $post_office->connect_to( split ':' => $c );
+                $self->spawn_actor(
+                    Acktor::Props->new(
+                        alias => 'init@'.$c,
+                        class => Acktor::System::Init::,
+                        args  => { init_callback => sub {} }
+                    ),
+                    remote      => true,
+                    destination => $c,
+                )
+            }
+        }
 
         my $init = delete $options{init} // sub {};
 

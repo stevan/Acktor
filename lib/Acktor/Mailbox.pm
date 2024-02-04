@@ -6,7 +6,6 @@ use builtin      qw[ blessed refaddr true false ];
 class Acktor::Mailbox {
     use Acktor::Logging;
 
-    field $origin    :param;
     field $actor_ref :param;
 
     field $actor;
@@ -19,11 +18,11 @@ class Acktor::Mailbox {
     ADJUST {
         $actor_ref->context->mailbox = $self;
 
-        $queue = \@messages;
-        $actor = $actor_ref->props->new_actor;
+        $queue  = \@messages;
+        $actor  = $actor_ref->props->new_actor;
     }
 
-    method origin { $origin    }
+    method origin { $actor_ref->context->dispatcher->address }
     method owner  { $actor_ref }
 
     # ...

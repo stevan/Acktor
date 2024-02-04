@@ -23,8 +23,8 @@ class Acktor::PostOffice::Watcher {
 
     # read/write events
 
-    method handle_read  ($node) { ... }
-    method handle_write ($node) { ... }
+    method handle_read  ($post_office) { ... }
+    method handle_write ($post_office) { ... }
 
     # socket info
 

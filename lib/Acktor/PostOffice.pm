@@ -3,6 +3,8 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
+use JSON::XS;
+
 use Acktor::PostOffice::Listener;
 use Acktor::PostOffice::Connection;
 
@@ -36,7 +38,7 @@ class Acktor::PostOffice {
         $self->add_watcher( $listener );
     }
 
-    method connect_to ($host, $port, $on_messages) {
+    method connect_to ($host, $port) {
         my $socket = IO::Socket::INET->new(
             PeerHost => $host,
             PeerPort => $port,
@@ -44,8 +46,7 @@ class Acktor::PostOffice {
         ) or die "Failed to create socket for host($host) port($port): $!";
 
         my $conn = Acktor::PostOffice::Connection->new(
-            socket      => $socket,
-            on_messages => $on_messages
+            socket => $socket,
         );
 
         $self->add_watcher( $conn );
@@ -53,16 +54,27 @@ class Acktor::PostOffice {
         return $conn;
     }
 
+    # TODO: check the connections for these too
+
+    method is_listening { !! $listener }
+    method is_connected_to ($address) { exists $lookup{ $address } }
+
     ## ----------------------------------------------------
 
     method post_letters (@letters) {
-        logger->log( WARN, "Posting(".(join ", " => @letters)) if WARN;
+        logger->log( DEBUG, "Posting(".(join ", " => @letters)) if DEBUG;
         foreach my $letter (@letters) {
             if (my $watcher = $lookup{ $letter->destination }) {
-                $watcher->to_write( $letter->message );
+                #say $watcher->peer_address;
+                #say $letter->destination;
+                #say JSON::XS->new->encode( $letter->pack );
+                $watcher->to_write( JSON::XS->new->encode( $letter->pack ) );
             }
             else {
+                logger->log( ERROR, "Cannot find destination: ". $letter->destination) if ERROR;
                 logger->log( ERROR, "DeadLetters(".(join ", " => @letters)) if ERROR;
+                use Data::Dumper;
+                logger->log( ERROR, Dumper(\%lookup)) if ERROR;
                 push @deadletters => $letter;
             }
         }
@@ -71,7 +83,31 @@ class Acktor::PostOffice {
     method deliver_letters (@letters) {
         logger->log( WARN, "Delivering(".(join ", " => @letters)) if WARN;
         foreach my $letter (@letters) {
-            $dispatcher->dispatch( $letter->message );
+            my $data = JSON::XS->new->decode( $letter );
+
+            #use Data::Dumper;
+            #warn Dumper $data;
+
+            my $e     = $data->{envelope};
+            my $to    = $dispatcher->lookup( $e->{to}   ) //
+                            die 'Could not find to: actor('.$e->{to}.')';
+
+            my $from  = $dispatcher->spawn_actor(
+                Acktor::Props->new( class => ($e->{from} =~ s/\d+\://r) ),
+                remote      => true,
+                destination => $data->{origin},
+            );
+
+            my $event = $e->{event};
+
+            $dispatcher->dispatch(
+                $to,
+                Acktor::Event->new(
+                    symbol  => $event->{symbol},
+                    payload => $event->{payload},
+                    context => $from->context,
+                )
+            );
         }
     }
 
@@ -92,7 +128,7 @@ class Acktor::PostOffice {
     method tick ($timeout) {
         local $! = 0;
 
-        logger->log( DEBUG, "looping w/ timeout($timeout) ..." ) if DEBUG;
+        logger->log( DEBUG, "tick w/ timeout($timeout) ..." ) if DEBUG;
 
         my $readers = IO::Select->new;
         my $writers = IO::Select->new;

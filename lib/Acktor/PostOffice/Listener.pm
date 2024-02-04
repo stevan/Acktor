@@ -12,21 +12,20 @@ class Acktor::PostOffice::Listener :isa(Acktor::PostOffice::Watcher) {
         $self->is_reading = true;
     }
 
-    method handle_read ($node) {
+    method handle_read ($post_office) {
         logger->log( DEBUG, "Got read event for Listener: ".$self->address ) if DEBUG;
 
         # collect as many as are waiting ...
         while (my $conn = $self->socket->accept) {
             logger->log( INFO, "Adding new ServerConnection" ) if INFO;
 
-            $node->add_watcher(
+            $post_office->add_watcher(
                 Acktor::PostOffice::Connection->new(
-                    socket      => $conn,
-                    on_messages => sub ($w, @msgs) {
-                        my ($msg) = @msgs;
-                        say "SERVER GOT $msg";
-                        $w->to_write("Goodbye ($msg)");
-                    }
+                    socket     => $conn,
+                    #on_letters => sub ($w, @msgs) {
+                    #    say "SERVER GOT ".join ', ' => @msgs;
+                    #    $w->to_write('{ "symbol" : "*Goodbye" }');
+                    #}
                 )
             );
         }

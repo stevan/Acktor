@@ -117,7 +117,6 @@ class Acktor::Scheduler {
             logger->line( "scheduler::tick($tick)" ) if DEBUG;
 
             # FIXME: this logic is confusing
-
             if ( scalar @to_be_run == 0 && scalar keys %to_be_run == 0 && !$timers->has_timers ) {
                 last if $run_until_done;
                 logger->log( DEBUG, '=>> nothing to run, ... yet' ) if DEBUG;
@@ -126,7 +125,9 @@ class Acktor::Scheduler {
                 $self->tick;
             }
 
+            # if there is nothing to be run ...
             if ( scalar @to_be_run == 0 && scalar keys %to_be_run == 0 ) {
+                # check timers first ...
                 if (my $wait = $timers->should_wait) {
                     logger->log( DEBUG, "... waiting ($wait)" ) if DEBUG;
                     if ($post_office) {
@@ -135,9 +136,14 @@ class Acktor::Scheduler {
                     else {
                         $timers->sleep( $wait );
                     }
+                    # if we have waited, proceed to next tick
+                    next;
                 }
             }
 
+            # unless we have already waited
+            # we want to give the watcher a
+            # chance to get called here ...
             $post_office->tick( 0 );
         }
 

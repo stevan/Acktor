@@ -45,7 +45,7 @@ class Acktor::PostOffice {
             socket  => $socket,
         );
 
-        $self->add_watcher( $listener );
+        $self->add_listener( $listener );
 
         return $addr;
     }
@@ -90,7 +90,7 @@ class Acktor::PostOffice {
                 logger->log( ERROR, "Cannot find destination: ". $letter->to->hostname) if ERROR;
                 logger->log( ERROR, "DeadLetters(".(join ", " => @letters)) if ERROR;
                 use Data::Dumper;
-                logger->log( ERROR, Dumper(\%lookup)) if ERROR;
+                logger->log( ERROR, join "\n" => map { $_ .' => '.$lookup{$_} } keys %lookup) if ERROR;
                 push @deadletters => $letter;
             }
         }
@@ -120,9 +120,14 @@ class Acktor::PostOffice {
 
     ## ----------------------------------------------------
 
+    method add_listener ($listener) {
+        push @watchers => $listener;
+    }
+
     method add_watcher ($watcher) {
         push @watchers => $watcher;
         $lookup{ $watcher->address->hostname } = $watcher;
+        #warn join ', ' => map { $_ .' => '.$lookup{$_} } keys %lookup;
     }
 
     method remove_watcher ($watcher) {

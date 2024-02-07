@@ -126,6 +126,22 @@ subtest '... simple' => sub {
     );
 };
 
+subtest '... simple' => sub {
+    my $addr = Acktor::PostOffice::Address->new( address => '0002:Echo::This::Package@127.0.0.1:3001' );
+    isa_ok($addr, 'Acktor::PostOffice::Address');
+
+    is($addr->address, '0002:Echo::This::Package@127.0.0.1:3001', '... got the expected address');
+    is($addr->host, '127.0.0.1', '... got the expected host');
+    is($addr->port, '3001', '... got the expected port');
+    is($addr->pid, '0002:Echo::This::Package', '... got the expected pid');
+
+    is_deeply(
+        $addr->pack,
+        '0002:Echo::This::Package@127.0.0.1:3001',
+        '... got the expected packed address'
+    );
+};
+
 
 
 

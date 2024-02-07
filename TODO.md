@@ -1,6 +1,24 @@
 
 
+PostOffice needs to be a connection manager
+    - register new server connections with connecting address
+    - register new client connections with connected address
 
+Remove Acktor::Mailbox::Remote
+    - add Acktor::Ref::Remote
+        - does not need Props
+        - knows the following:
+            - remote PID
+            - remote address
+            - $postoffice
+        - send == $postoffice->post_letter
+
+Dispatcher needs to differentiate between remote and local
+    - remote does not need to be scheduled
+        - it connects directly to postoffice
+    - store in a %remotes
+        - avoid having to create new remote instances
+        - easier lookup
 
 
 

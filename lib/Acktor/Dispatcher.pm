@@ -5,11 +5,11 @@ use builtin      qw[ blessed refaddr true false ];
 
 use Acktor::Scheduler;
 use Acktor::Mailbox;
-use Acktor::Mailbox::Remote;
 use Acktor::Ref;
 use Acktor::Context;
 use Acktor::Props;
 use Acktor::PostOffice;
+use Acktor::Remote::Ref;
 
 use Acktor::System::Init;
 
@@ -37,7 +37,22 @@ class Acktor::Dispatcher {
     ## Spawn
     ## ----------------------------------------------------
 
-    method spawn_actor ($props, %options) {
+    method spawn_remote_actor ($address) {
+
+        logger->log( DEBUG, "spawn_remote_actor( $address )" ) if DEBUG;
+
+        my $remote_ref = $lookup{ $address->pack } //= Acktor::Remote::Ref->new(
+            address     => $address,
+            post_office => $post_office,
+            context     => Acktor::Context->new(
+                dispatcher => $self,
+            )
+        );
+
+        return $remote_ref;
+    }
+
+    method spawn_actor ($props) {
 
         my $actor_ref = Acktor::Ref->new(
             props   => $props,
@@ -46,24 +61,10 @@ class Acktor::Dispatcher {
             )
         );
 
-        my $mailbox;
-        if ($options{remote}) {
-            my $destination = $options{destination}
-                // die "You must supply a destination to spawn a remote actor";
-
-            logger->log( DEBUG, "spawn_remote_actor( $props ) => $actor_ref for $destination" ) if DEBUG;
-            $mailbox = Acktor::Mailbox::Remote->new(
-                actor_ref   => $actor_ref,
-                destination => $destination,
-                post_office => $post_office,
-            );
-        }
-        else {
-            logger->log( DEBUG, "spawn_actor( $props ) => $actor_ref" ) if DEBUG;
-            $mailbox = Acktor::Mailbox->new(
-                actor_ref => $actor_ref,
-            );
-        }
+        logger->log( DEBUG, "spawn_actor( $props ) => $actor_ref" ) if DEBUG;
+        my $mailbox = Acktor::Mailbox->new(
+            actor_ref => $actor_ref,
+        );
 
         $scheduler->register( $actor_ref, $mailbox );
 
@@ -133,23 +134,14 @@ class Acktor::Dispatcher {
     method run (%options) {
         logger->line( "dispatcher::start" ) if DEBUG;
 
-        if (my $listen_addr = delete $options{listen_on}) {
-            $post_office->listen_on( split ':' => $listen_addr );
-            $address = $listen_addr;
+        if (my $listen_on = delete $options{listen_on}) {
+            $address = $post_office->listen_on( $listen_on );
         }
 
         if (my $connections = delete $options{connect_to}) {
             foreach my $c (@$connections) {
-                $post_office->connect_to( split ':' => $c );
-                $self->spawn_actor(
-                    Acktor::Props->new(
-                        alias => 'init@'.$c,
-                        class => Acktor::System::Init::,
-                        args  => { init_callback => sub {} }
-                    ),
-                    remote      => true,
-                    destination => $c,
-                )
+                my $addr = $post_office->connect_to( $c );
+                $self->spawn_remote_actor( $addr->with_pid('init') );
             }
         }
 

@@ -8,15 +8,9 @@ class Acktor::PostOffice::Letter {
 
     use if LOG_LEVEL, 'overload' => '""' => \&to_string;
 
-    field $origin      :param;
-    field $destination :param;
-
     field $to    :param;
     field $from  :param;
     field $event :param;
-
-    method origin      { $origin      }
-    method destination { $destination }
 
     method to    { $to    }
     method from  { $from  }
@@ -24,19 +18,15 @@ class Acktor::PostOffice::Letter {
 
     field $_to_str;
     method to_string {
-        $_to_str //= sprintf 'Letter[ %s@%s, %s@%s, %s ]' => $to, $destination, $from, $origin, $event;
+        $_to_str //= sprintf 'Letter[ %s, %s, %s ]' => $to, $from, $event;
     }
 
     field $_packed;
     method pack {
         $_packed //= {
-            origin      => $origin,
-            destination => $destination,
-            envelope    => {
-                to    => $to->pid,
-                from  => $from->pid,
-                event => $event->pack,
-            }
+            to    => $to->pack,
+            from  => $from->pack,
+            event => $event->pack,
         };
     }
 }

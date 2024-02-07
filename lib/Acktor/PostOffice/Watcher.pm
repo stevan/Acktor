@@ -5,7 +5,8 @@ use builtin      qw[ blessed refaddr true false ];
 
 class Acktor::PostOffice::Watcher {
 
-    field $socket :param;
+    field $address :param;
+    field $socket  :param;
 
     field $reading = false;
     field $writing = false;
@@ -19,7 +20,8 @@ class Acktor::PostOffice::Watcher {
     method is_writing :lvalue { $writing }
 
     # socket access
-    method socket { $socket }
+    method socket  { $socket  }
+    method address { $address }
 
     # read/write events
 
@@ -28,6 +30,6 @@ class Acktor::PostOffice::Watcher {
 
     # socket info
 
-    method address      { join ":" => grep defined, map { $_->sockhost, $_->sockport } $socket }
-    method peer_address { join ":" => grep defined, map { $_->peerhost, $_->peerport } $socket }
+    method _address      { join ":" => grep defined, map { $_->sockhost, $_->sockport } $socket }
+    method _peer_address { join ":" => grep defined, map { $_->peerhost, $_->peerport } $socket }
 }

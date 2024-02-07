@@ -6,7 +6,8 @@ use builtin      qw[ blessed refaddr true false ];
 use JSON::XS;
 
 use Acktor::PostOffice::Listener;
-use Acktor::PostOffice::Connection;
+use Acktor::PostOffice::ClientConnection;
+use Acktor::PostOffice::Address;
 
 class Acktor::PostOffice {
     use Acktor::Logging;
@@ -22,56 +23,71 @@ class Acktor::PostOffice {
 
     field %lookup;
 
+
+    method dispatcher { $dispatcher }
+
     ## ----------------------------------------------------
 
-    method listen_on ($host, $port) {
+    method listen_on ($address) {
+
+        my $addr = Acktor::PostOffice::Address->new( address => $address );
+
         my $socket = IO::Socket::INET->new(
             Listen    => SOMAXCONN,
-            LocalAddr => $host,
-            LocalPort => $port,
+            LocalAddr => $addr->host,
+            LocalPort => $addr->port,
             Proto     => 'tcp',
             ReuseAddr => 1,
-        ) or die "Failed to create listen address at ${host}:${port} => $!";
+        ) or die "Failed to create listen address at $address => $!";
 
-        $listener = Acktor::PostOffice::Listener->new( socket => $socket );
+        $listener = Acktor::PostOffice::Listener->new(
+            address => $addr,
+            socket  => $socket,
+        );
 
         $self->add_watcher( $listener );
+
+        return $addr;
     }
 
-    method connect_to ($host, $port) {
-        my $socket = IO::Socket::INET->new(
-            PeerHost => $host,
-            PeerPort => $port,
-            proto    => 'tcp',
-        ) or die "Failed to create socket for host($host) port($port): $!";
+    method connect_to ($address) {
 
-        my $conn = Acktor::PostOffice::Connection->new(
-            socket => $socket,
+        my $addr = Acktor::PostOffice::Address->new( address => $address );
+
+        my $socket = IO::Socket::INET->new(
+            PeerHost => $addr->host,
+            PeerPort => $addr->port,
+            proto    => 'tcp',
+        ) or die "Failed to create socket for $address => $!";
+
+        my $conn = Acktor::PostOffice::ClientConnection->new(
+            address => $addr,
+            socket  => $socket,
         );
 
         $self->add_watcher( $conn );
 
-        return $conn;
+        return $addr;
     }
 
     # TODO: check the connections for these too
 
     method is_listening { !! $listener }
-    method is_connected_to ($address) { exists $lookup{ $address } }
+    method is_connected_to ($address) { exists $lookup{ $address->hostname } }
 
     ## ----------------------------------------------------
 
     method post_letters (@letters) {
         logger->log( DEBUG, "Posting(".(join ", " => @letters)) if DEBUG;
         foreach my $letter (@letters) {
-            if (my $watcher = $lookup{ $letter->destination }) {
+            if (my $watcher = $lookup{ $letter->to->hostname }) {
                 #say $watcher->peer_address;
                 #say $letter->destination;
                 #say JSON::XS->new->encode( $letter->pack );
                 $watcher->to_write( JSON::XS->new->encode( $letter->pack ) );
             }
             else {
-                logger->log( ERROR, "Cannot find destination: ". $letter->destination) if ERROR;
+                logger->log( ERROR, "Cannot find destination: ". $letter->to->hostname) if ERROR;
                 logger->log( ERROR, "DeadLetters(".(join ", " => @letters)) if ERROR;
                 use Data::Dumper;
                 logger->log( ERROR, Dumper(\%lookup)) if ERROR;
@@ -85,27 +101,18 @@ class Acktor::PostOffice {
         foreach my $letter (@letters) {
             my $data = JSON::XS->new->decode( $letter );
 
-            #use Data::Dumper;
-            #warn Dumper $data;
+            my $to   = Acktor::PostOffice::Address->new( address => $data->{to} );
+            my $from = Acktor::PostOffice::Address->new( address => $data->{from} );
 
-            my $e     = $data->{envelope};
-            my $to    = $dispatcher->lookup( $e->{to}   ) //
-                            die 'Could not find to: actor('.$e->{to}.')';
-
-            my $from  = $dispatcher->spawn_actor(
-                Acktor::Props->new( class => ($e->{from} =~ s/\d+\://r) ),
-                remote      => true,
-                destination => $data->{origin},
-            );
-
-            my $event = $e->{event};
+            my $recipient = $dispatcher->lookup( $to->pid ) // die 'Could not find to: actor('.$to->pack.')';
+            my $sender    = $dispatcher->spawn_remote_actor( $from );
 
             $dispatcher->dispatch(
-                $to,
+                $recipient,
                 Acktor::Event->new(
-                    symbol  => $event->{symbol},
-                    payload => $event->{payload},
-                    context => $from->context,
+                    symbol  => $data->{event}->{symbol},
+                    payload => $data->{event}->{payload},
+                    context => $sender->context, # XXX - this should be a remote context??
                 )
             );
         }
@@ -115,12 +122,12 @@ class Acktor::PostOffice {
 
     method add_watcher ($watcher) {
         push @watchers => $watcher;
-        $lookup{ $watcher->peer_address } = $watcher;
+        $lookup{ $watcher->address->hostname } = $watcher;
     }
 
     method remove_watcher ($watcher) {
         @watchers = grep { refaddr $watcher != refaddr $_ } @watchers;
-        delete $lookup{ $watcher->peer_address };
+        delete $lookup{ $watcher->address->hostname };
     }
 
     ## ...

@@ -9,8 +9,6 @@ use Acktor::PostOffice::BufferedWriter;
 class Acktor::PostOffice::Connection :isa(Acktor::PostOffice::Watcher) {
     use Acktor::Logging;
 
-    #field $on_letters :param;
-
     field $reader;
     field $writer;
 
@@ -30,9 +28,9 @@ class Acktor::PostOffice::Connection :isa(Acktor::PostOffice::Watcher) {
 
     method handle_read ($post_office) {
         logger->log( DEBUG, "Got read event for Connection: "
-                . $self->address
+                . $self->_address
                 . " connected to PeerConnection: "
-                . $self->peer_address) if DEBUG;
+                . $self->_peer_address) if DEBUG;
 
         if ($reader->read( $self->socket )) {
             my @letters = $reader->fetch_letters;
@@ -52,9 +50,9 @@ class Acktor::PostOffice::Connection :isa(Acktor::PostOffice::Watcher) {
 
     method handle_write ($post_office) {
         logger->log( DEBUG, "Got write event for Connection: "
-                . $self->address
+                . $self->_address
                 . " connected to PeerConnection: "
-                . $self->peer_address) if DEBUG;
+                . $self->_peer_address) if DEBUG;
 
         $self->is_writing = $writer->write( $self->socket );
     }

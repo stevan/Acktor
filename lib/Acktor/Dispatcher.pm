@@ -181,6 +181,10 @@ class Acktor::Dispatcher {
 
         logger->line( "dispatcher::exit" ) if DEBUG;
     }
+
+    method shutdown {
+        # TODO - implement me ...
+    }
 }
 
 __END__

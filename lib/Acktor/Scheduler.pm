@@ -130,7 +130,7 @@ class Acktor::Scheduler {
                 # check timers first ...
                 if (my $wait = $timers->should_wait) {
                     logger->log( DEBUG, "... waiting ($wait)" ) if DEBUG;
-                    if ($post_office) {
+                    if ($post_office->is_listening) {
                         $post_office->tick( $wait );
                     }
                     else {
@@ -144,7 +144,7 @@ class Acktor::Scheduler {
             # unless we have already waited
             # we want to give the watcher a
             # chance to get called here ...
-            $post_office->tick( 0 );
+            $post_office->tick( 0 ) if $post_office->is_listening;
         }
 
         logger->line( "scheduler::exit" ) if DEBUG;

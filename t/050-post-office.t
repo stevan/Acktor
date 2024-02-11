@@ -44,6 +44,12 @@ sub init ($ctx) {
     $Echo->send( event *Echo::Echo => "Hello" );
 
     $ctx->schedule(
+        event => event( *Echo::Echo => "Hello Again" ),
+        for   => $Echo,
+        after => 1,
+    );
+
+    $ctx->schedule(
         event => event( *Echo::End ),
         for   => $Echo,
         after => 3,

@@ -10,5 +10,6 @@ use Acktor::Streams::Source;
 use Acktor::Streams::Subscriber;
 use Acktor::Streams::Subscription;
 use Acktor::Streams::Subscription::Observer;
+use Acktor::Streams::Processor;
 
 __END__

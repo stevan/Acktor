@@ -129,7 +129,7 @@ class Acktor::Scheduler {
             if ( scalar @to_be_run == 0 && scalar keys %to_be_run == 0 ) {
                 # check timers first ...
                 if (my $wait = $timers->should_wait) {
-                    logger->log( DEBUG, "... waiting ($wait)" ) if DEBUG;
+                    logger->log( WARN, "... waiting ($wait)" ) if WARN;
                     if ($post_office->is_listening) {
                         $post_office->tick( $wait );
                     }

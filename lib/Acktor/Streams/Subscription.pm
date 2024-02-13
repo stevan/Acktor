@@ -17,6 +17,8 @@ class Acktor::Streams::Subscription :isa(Acktor) {
 
     field $observer;
 
+    method observer { $observer }
+
     method Request :Receive ($num_elements) {
         logger->log( INFO, '*Request called with num_elements('.$num_elements.')' ) if INFO;
 

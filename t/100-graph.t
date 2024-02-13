@@ -80,6 +80,86 @@ class Subscription :isa(Acktor) {
 
 }
 
+class Processor :isa(Acktor) {
+    use Acktor::Logging;
+
+    field $map          :param;
+    field $filter       :param;
+    field $request_size :param;
+
+    field $subscription_in;
+
+    field $subscriber;
+    field $subscription_out;
+
+    field @buffer;
+    field $amount_requested = 0;
+
+    method Subscribe :Receive(*Publisher::Subscribe) ($s) {
+        logger->log( INFO, "*Subscribe got subscriber($s)" ) if INFO;
+
+        $subscriber       = $s;
+        $subscription_out = spawn(
+            actor_of Subscription:: => (
+                subscriber => $subscriber,
+                publisher  => context->self
+            )
+        );
+
+        $subscriber->send( event *Subscriber::OnSubscribe => $subscription_out );
+    }
+
+    method Request :Receive(*Publisher::Request) ($amount) {
+        logger->log( INFO, "*Request got amount($amount) total($amount_requested)" ) if INFO;
+        $amount_requested += $amount;
+        if ($subscription_out) {
+            $self->drain_buffer;
+        } else {
+            $subscription_out->send( event *Subscription::OnError => 'called Request without active subscription' );
+        }
+    }
+
+    method OnSubscribe :Receive(*Subscriber::OnSubscribe) ($s) {
+        logger->log( INFO, "*OnSubscribe got subscription($s)" ) if INFO;
+        $subscription_in = $s;
+        $subscription_in->send( event *Subscription::Request => $request_size );
+    }
+
+    method OnNext :Receive(*Subscriber::OnNext) ($next) {
+        logger->log( INFO, "*OnNext got next($next)" ) if INFO;
+        push @buffer => $next;
+        $self->drain_buffer if $subscription_out;
+    }
+
+    method OnCompleted :Receive(*Subscriber::OnCompleted) {
+        logger->log( INFO, "*OnCompleted" ) if INFO;
+        $self->drain_buffer;
+        $subscription_out->send( event *Subscription::OnCompleted );
+    }
+
+    method OnError :Receive(*Subscriber::OnError) ($error) {
+        logger->log( INFO, "*OnError got error($error)" ) if INFO;
+        $subscription_out->send( event *Subscription::OnError => $error );
+    }
+
+    method drain_buffer {
+        while (@buffer && $amount_requested) {
+            if ( $filter && !$filter->( $buffer[0] ) ) {
+                shift @buffer;
+                next;
+            }
+            $subscription_out->send( event *Subscription::OnNext => $map->( shift @buffer ) );
+            $amount_requested--;
+        }
+
+        logger->log( WARN, "AMOUNT REMAINING ($amount_requested)" ) if WARN;
+        if ($amount_requested == 0) {
+            logger->log( WARN, "Refreshing request on Processor" ) if WARN;
+            $subscription_in->send( event *Subscription::Request => $request_size );
+        }
+    }
+}
+
 class Publisher :isa(Acktor) {
     use Acktor::Logging;
 
@@ -130,6 +210,8 @@ class Publisher :isa(Acktor) {
             $subscription->send( event *Subscription::OnNext => shift @buffer );
             $amount_requested--;
         }
+
+        logger->log( WARN, "AMOUNT REMAINING ($amount_requested)" ) if WARN;
     }
 }
 
@@ -137,18 +219,26 @@ class Publisher :isa(Acktor) {
 sub init ($ctx) {
 
     my $p = spawn actor_of Publisher::;
-    my $s = spawn actor_of Subscriber:: => ( request_size => 3 );
+    my $s = spawn actor_of Subscriber:: => ( request_size => 5 );
+    my $f = spawn actor_of Processor:: => (
+        request_size => 10,
 
-    $p->send( event *Publisher::Subscribe => $s );
+        map    => sub ($x) {  $x * 2 },
+        filter => sub ($x) { ($x % 2) == 0 }
+    );
+
+    $p->send( event *Publisher::Subscribe => $f );
+    $f->send( event *Publisher::Subscribe => $s );
 
     my $x = 1;
 
     foreach my $i (1 .. 4) {
         foreach my $j (1 .. 10) {
+            #$p->send(event(*Publisher::Submit => $x++));
             context->schedule(
                 event => event(*Publisher::Submit => $x++),
                 for   => $p,
-                after => ($i + rand()),
+                after => $i + rand(),
             );
         }
     }

@@ -60,6 +60,7 @@ class Acktor::Mailbox {
                 my $message = shift @msgs;
                 try {
                     unless ($actor->accept($context, $message)) {
+                        logger->log( ERROR, "actor::accept($message) sent to dead letter" ) if ERROR;
                         push @deadletters => $message;
                     }
                 } catch ($e) {

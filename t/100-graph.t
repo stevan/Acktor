@@ -135,7 +135,7 @@ class Processor :isa(Acktor) {
             $subscription_in->send( event *Subscription::Request => $request_size );
         }
         push @buffer => $next;
-        $self->drain_buffer if $subscription_out;
+        $self->drain_buffer if $subscription_out && $amount_requested;
     }
 
     method OnCompleted :Receive(*Subscriber::OnCompleted) {
@@ -159,11 +159,7 @@ class Processor :isa(Acktor) {
             $amount_requested--;
         }
 
-        logger->log( WARN, "AMOUNT REMAINING ($amount_requested)" ) if WARN;
-        if ($amount_requested == 0) {
-            logger->log( WARN, "Refreshing request on Processor" ) if WARN;
-            $subscription_in->send( event *Subscription::Request => $request_size );
-        }
+        logger->log( WARN, "AMOUNT REQUESTED ($amount_requested) IN BUFFER(".scalar(@buffer).")" ) if WARN;
     }
 }
 
@@ -203,7 +199,7 @@ class Publisher :isa(Acktor) {
     method Submit :Receive ($value) {
         logger->log( INFO, "*Submit got value($value)" ) if INFO;
         push @buffer => $value;
-        $self->drain_buffer if $subscription;
+        $self->drain_buffer if $subscription && $amount_requested;
     }
 
     method Close :Receive {
@@ -218,7 +214,7 @@ class Publisher :isa(Acktor) {
             $amount_requested--;
         }
 
-        logger->log( WARN, "AMOUNT REMAINING ($amount_requested)" ) if WARN;
+        logger->log( WARN, "AMOUNT REQUESTED ($amount_requested) IN BUFFER(".scalar(@buffer).")" ) if WARN;
     }
 }
 
@@ -227,12 +223,12 @@ sub init ($ctx) {
 
     my $p = spawn actor_of Publisher::;
     my $f = spawn actor_of Processor:: => (
-        request_size => 12,
+        request_size => 10,
 
         map    => sub ($x) {  $x * 2 },
-        filter => sub ($x) { return true; ($x % 2) == 0 }
+        filter => sub ($x) { ($x % 2) == 0 }
     );
-    my $s = spawn actor_of Subscriber:: => ( request_size => 5 );
+    my $s = spawn actor_of Subscriber:: => ( request_size => 10 );
 
     $p->send( event *Publisher::Subscribe => $f );
     $f->send( event *Publisher::Subscribe => $s );
@@ -241,12 +237,12 @@ sub init ($ctx) {
 
     foreach my $i (1 .. 4) {
         foreach my $j (1 .. 10) {
-            #$p->send(event(*Publisher::Submit => $x++));
-            context->schedule(
-                event => event(*Publisher::Submit => $x++),
-                for   => $p,
-                after => $i + rand(),
-            );
+            $p->send(event(*Publisher::Submit => $x++));
+            #context->schedule(
+            #    event => event(*Publisher::Submit => $x++),
+            #    for   => $p,
+            #    after => $i + rand(),
+            #);
         }
     }
 

@@ -6,29 +6,46 @@ use builtin      qw[ blessed refaddr true false ];
 class Acktor::Mailbox {
     use Acktor::Logging;
 
+    use constant STOPPED => \'STOP';
+    use constant PAUSED  => \'PAUSE';
+    use constant RUNNING => \'RUN';
+
     field $actor_ref :param;
 
     field $actor;
 
     field @messages;
+    field @buffer;
     field @deadletters;
 
     field $queue;
+
+    field $status;
 
     ADJUST {
         $actor_ref->context->mailbox = $self;
 
         $queue  = \@messages;
         $actor  = $actor_ref->props->new_actor;
+        $status = RUNNING;
     }
 
     method origin { $actor_ref->context->dispatcher->address }
     method owner  { $actor_ref }
 
+    method status { $status }
+
     # ...
 
-    method resume { $queue = \@messages     }
-    method stop   { $queue = \@deadletters  }
+    method stop   { $queue = \@deadletters; $status = STOPPED; $self; }
+    method pause  { $queue = \@buffer;      $status = PAUSED;  $self; }
+    method resume {
+        push @messages => @buffer;
+        @buffer = ();
+        $queue  = \@messages;
+        $status = RUNNING;
+        $self;
+    }
 
     # ... messages
 
@@ -72,6 +89,8 @@ class Acktor::Mailbox {
                 }
             }
         }
+
+        $self;
     }
 }
 

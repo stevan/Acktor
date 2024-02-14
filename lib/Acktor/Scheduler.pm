@@ -97,8 +97,35 @@ class Acktor::Scheduler {
                                 (join ', ' => (map $_->owner->to_string, values %to_run)).
                                 " )" ) if DEBUG;
 
-            # mailboxes handle their own exceptions ...
-            $_->tick foreach values %to_run;
+            # IMPORTANT:
+            # we are using this block of code to enforce
+            # the async boundary, such that all messages
+            # sent within a given tick are not processed
+            # until the sunsequent tick. It needs to be
+            # done in this manner because we do not have
+            # a single message queue.
+            #
+            # Without this we would (sorta) still respect
+            # the overall ordering of messages, however
+            # only mailboxes that are scheduled will be
+            # able to receive these new messages, while
+            # others will wait until the next tick. In
+            # theory this should not really affect the
+            # message ordering, but it does make it much
+            # harder to reason about the execution of
+            # things.
+            #
+            # So while it might seem like overkill, it
+            # will probably help avoid a lot of subtle
+            # bugs.
+            #
+            # NOTE: this runs from bottom to top ...
+            map { $_->resume } # 3. resume all the mailboxes, unbuffering the new messages
+            map { $_->tick   } # 2. tick all the mailboxes, processing all the messages
+            map { $_->pause  } # 1. pause all the mailboxes, buffers new messages
+            values %to_run;
+
+            # NOTE: mailboxes handle their own exceptions ...
         }
     }
 

@@ -237,12 +237,12 @@ sub init ($ctx) {
 
     foreach my $i (1 .. 4) {
         foreach my $j (1 .. 10) {
-            $p->send(event(*Publisher::Submit => $x++));
-            #context->schedule(
-            #    event => event(*Publisher::Submit => $x++),
-            #    for   => $p,
-            #    after => $i + rand(),
-            #);
+            #$p->send(event(*Publisher::Submit => $x++));
+            context->schedule(
+                event => event(*Publisher::Submit => $x++),
+                for   => $p,
+                after => $i + rand(),
+            );
         }
     }
 

@@ -223,34 +223,21 @@ sub init ($ctx) {
 
     my $p = spawn actor_of Publisher::;
     my $f = spawn actor_of Processor:: => (
-        request_size => 10,
+        request_size => 1000,
 
         map    => sub ($x) {  $x * 2 },
         filter => sub ($x) { ($x % 2) == 0 }
     );
-    my $s = spawn actor_of Subscriber:: => ( request_size => 10 );
+    my $s = spawn actor_of Subscriber:: => ( request_size => 1000 );
 
     $p->send( event *Publisher::Subscribe => $f );
     $f->send( event *Publisher::Subscribe => $s );
 
     my $x = 1;
-
-    foreach my $i (1 .. 4) {
-        foreach my $j (1 .. 10) {
-            #$p->send(event(*Publisher::Submit => $x++));
-            context->schedule(
-                event => event(*Publisher::Submit => $x++),
-                for   => $p,
-                after => $i + rand(),
-            );
-        }
+    foreach my $j (1 .. 500_000) {
+        $p->send(event(*Publisher::Submit => $x++));
     }
 
-    context->schedule(
-        event => event(*Publisher::Close),
-        for   => $p,
-        after => 10,
-    );
 }
 
 my $system = Acktor::System->new;

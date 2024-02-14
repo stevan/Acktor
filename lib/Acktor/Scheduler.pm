@@ -98,7 +98,7 @@ class Acktor::Scheduler {
                                 " )" ) if DEBUG;
 
             # IMPORTANT:
-            # we are using this block of code to enforce
+            # The block of code below is meant to enforce
             # the async boundary, such that all messages
             # sent within a given tick are not processed
             # until the sunsequent tick. It needs to be
@@ -113,11 +113,11 @@ class Acktor::Scheduler {
             # theory this should not really affect the
             # message ordering, but it does make it much
             # harder to reason about the execution of
-            # things.
+            # the overall system.
             #
             # So while it might seem like overkill, it
             # will probably help avoid a lot of subtle
-            # bugs.
+            # bugs in the future.
             #
             # NOTE: this runs from bottom to top ...
             map { $_->resume } # 3. resume all the mailboxes, unbuffering the new messages

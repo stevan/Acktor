@@ -88,6 +88,7 @@ class Processor :isa(Acktor) {
     field $request_size :param;
 
     field $subscription_in;
+    field $received = 0;
 
     field $subscriber;
     field $subscription_out;
@@ -127,6 +128,12 @@ class Processor :isa(Acktor) {
 
     method OnNext :Receive(*Subscriber::OnNext) ($next) {
         logger->log( INFO, "*OnNext got next($next)" ) if INFO;
+        $received++;
+        if ($received == $request_size) {
+            logger->log( INFO, "*OnNext reached limit($request_size)" ) if INFO;
+            $received = 0;
+            $subscription_in->send( event *Subscription::Request => $request_size );
+        }
         push @buffer => $next;
         $self->drain_buffer if $subscription_out;
     }
@@ -219,13 +226,13 @@ class Publisher :isa(Acktor) {
 sub init ($ctx) {
 
     my $p = spawn actor_of Publisher::;
-    my $s = spawn actor_of Subscriber:: => ( request_size => 5 );
     my $f = spawn actor_of Processor:: => (
-        request_size => 10,
+        request_size => 12,
 
         map    => sub ($x) {  $x * 2 },
-        filter => sub ($x) { ($x % 2) == 0 }
+        filter => sub ($x) { return true; ($x % 2) == 0 }
     );
+    my $s = spawn actor_of Subscriber:: => ( request_size => 5 );
 
     $p->send( event *Publisher::Subscribe => $f );
     $f->send( event *Publisher::Subscribe => $s );

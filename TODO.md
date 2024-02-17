@@ -1,5 +1,12 @@
 
 
+- Improve the speed of Ref::send
+    - buffer in the scheudler during ticks
+
+- Improve the speed of Scheduler::tick
+    - buffering should help
+        - then we can remove the need to pause/resume the mailbox
+
 - Everything needs controlled shutdown, not DESTROY
 
 

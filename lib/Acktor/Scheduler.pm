@@ -14,8 +14,12 @@ class Acktor::Scheduler {
     field %mailboxes;
     field @deadletters;
 
+    field %buffer;
+
     field @to_be_run;
     field %to_be_run;
+
+    field $is_running = false;
 
     ADJUST {
         $timers = Acktor::Timers->new;
@@ -38,6 +42,8 @@ class Acktor::Scheduler {
     # ...
 
     method schedule_message ($to, $event) {
+        $is_running && return ! push @{ $buffer{ refaddr $to } //= [ $to ] } => $event;
+
         if ( my $m = $mailboxes{ refaddr $to } ) {
             $m->enqueue_message( $event );
             $to_be_run{ refaddr $m } //= $m;
@@ -92,10 +98,14 @@ class Acktor::Scheduler {
             }
         }
 
+
         if ( keys %to_run ) {
             logger->log( DEBUG, "tick =>> running mailboxes( ".
                                 (join ', ' => (map $_->owner->to_string, values %to_run)).
                                 " )" ) if DEBUG;
+
+
+            $is_running = true;
 
             # IMPORTANT:
             # The block of code below is meant to enforce
@@ -120,12 +130,27 @@ class Acktor::Scheduler {
             # bugs in the future.
             #
             # NOTE: this runs from bottom to top ...
-            map { $_->resume } # 3. resume all the mailboxes, unbuffering the new messages
+            #map { $_->resume } # 3. resume all the mailboxes, unbuffering the new messages
             map { $_->tick   } # 2. tick all the mailboxes, processing all the messages
-            map { $_->pause  } # 1. pause all the mailboxes, buffers new messages
+            #map { $_->pause  } # 1. pause all the mailboxes, buffers new messages
             values %to_run;
 
             # NOTE: mailboxes handle their own exceptions ...
+
+            $is_running = false;
+
+            if (keys %buffer) {
+                map {
+                    my ($to, @messages) = @$_;
+                    if ( my $m = $mailboxes{ refaddr $to } ) {
+                        $m->enqueue_messages( @messages );
+                        $to_be_run{ refaddr $m } //= $m;
+                    } else {
+                        push @deadletters => [ $to, [ @messages ] ];
+                    }
+                } values %buffer;
+                %buffer = ();
+            }
         }
     }
 

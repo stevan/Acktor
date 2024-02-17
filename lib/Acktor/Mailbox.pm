@@ -57,6 +57,10 @@ class Acktor::Mailbox {
         push @$queue => $message;
     }
 
+    method enqueue_messages (@messages) {
+        push @$queue => @messages;
+    }
+
     method drain_messages {
         my @msgs = @messages;
         @messages = ();

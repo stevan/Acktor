@@ -32,11 +32,11 @@ sub init ($ctx) {
 
     my $x = 1;
     foreach my $j (1 .. 50) {
-        $p->send(event(*Acktor::Streams::Publisher::Submit => $x++));
+        $p->send( event *Acktor::Streams::Publisher::Submit => $x++ );
     }
 
     context->schedule(
-        event => event(*Acktor::Streams::Publisher::Close),
+        event => event( *Acktor::Streams::Publisher::Close ),
         for   => $p,
         after => 2
     );

@@ -3,6 +3,13 @@
 # TODO
 <!---------------------------------------------------------------------------->
 
+- Update the Stream.md document
+    - to reflect the new classes
+
+- Handle event payload serialization
+    - the pack method might not work
+    - look into JSON feature for to_JSON methods or something
+
 - Everything needs controlled shutdown, not DESTROY
     - this might make it possible to remove the schedule callback feature in the scheduler
         - it is only used internally for:

@@ -24,7 +24,14 @@ class Acktor::Event {
 
     field $_packed;
     method pack {
-        $_packed //= { symbol => "$symbol", payload => $payload };
+        $_packed //= {
+            symbol  => "$symbol",
+            # TODO:
+            # we need to make sure to serialize the payload
+            # which means looking any Ref instances. It might
+            # be better to use some JSON feature for this?
+            payload => $payload,
+        };
     }
 }
 

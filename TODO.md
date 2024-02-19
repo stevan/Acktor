@@ -1,22 +1,20 @@
 
-
-- Improve the speed of Ref::send
-    - buffer in the scheudler during ticks
-
-- Improve the speed of Scheduler::tick
-    - buffering should help
-        - then we can remove the need to pause/resume the mailbox
-
-- Everything needs controlled shutdown, not DESTROY
-
-
-
-
 <!---------------------------------------------------------------------------->
 # TODO
 <!---------------------------------------------------------------------------->
 
-## Implement Interval Timers
+- Everything needs controlled shutdown, not DESTROY
+    - this might make it possible to remove the schedule callback feature in the scheduler
+        - it is only used internally for:
+            - scheduling init
+                - this could be done another way
+            - scheduling despawn and child stop
+                - which could be converted to chained signals/events
+
+
+<!---------------------------------------------------------------------------->
+# Intervals
+<!---------------------------------------------------------------------------->
 
 Think about this more.
 
@@ -31,7 +29,7 @@ Think about this more.
     $ctx->schedule(
         event => event( *Hello::Goodbye => "Cruel World" ),
         for   => $hello,
-        every => 2,
+        every => 2, #interval
     );
 
 ```
@@ -39,12 +37,6 @@ Think about this more.
 <!---------------------------------------------------------------------------->
 # Remoting
 <!---------------------------------------------------------------------------->
-
-What is the PostOffice for??
-
-## Implement Watchers
-
-- in progress
 
 ## Implement Node connection protocol
 
@@ -265,6 +257,9 @@ class HTTPClient :isa(Acktor) {
 # https://en.wikipedia.org/wiki/Futures_and_promises#Semantics_of_futures_in_the_actor_model
 # https://docs.oracle.com/en/java/javase/19/docs/api/java.base/java/util/concurrent/Future.html
 
+<!---------------------------------------------------------------------------->
+# MISC (NEEDS MORE THINKING)
+<!---------------------------------------------------------------------------->
 
 - Protocols for cross Process communication
     - Spawn
@@ -280,32 +275,4 @@ class HTTPClient :isa(Acktor) {
         - Terminated  - sent after PostStop to all watchers of this Actor
         - ChildFailed - the child Actor has failed permanently
 
-<!---------------------------------------------------------------------------->
-# Dependency Diagram
-<!---------------------------------------------------------------------------->
 
-```
-Legend:
-   % = map of objects
-   @ = list of objects
-   > = circular reference
-  >> = many circular refs
-<..> = The code you write
-
-
-System
-    Dispatcher
-        Scheduler
-            @Callbacks
-            %MailBox
-                <Actor>
-                @Messages
-                Ref
-                    Props
-                    Context
-                        >Dispatcher
-                        >Ref
-                        >>(parent/children)
-
-
-```

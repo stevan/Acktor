@@ -40,7 +40,6 @@ sub init ($ctx) {
         for   => $p,
         after => 2
     );
-
 }
 
 my $system = Acktor::System->new;

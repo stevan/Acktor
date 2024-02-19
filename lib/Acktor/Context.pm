@@ -3,8 +3,6 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
-use Acktor::Timer;
-
 class Acktor::Context {
     use Acktor::Logging;
 
@@ -32,20 +30,7 @@ class Acktor::Context {
     method lookup ($alias) { $dispatcher->lookup($alias) }
 
     method schedule (%options) {
-        my $timeout = $options{after} // die 'You must specify an `after` value for the timeout';
-        my $for     = $options{for};
-        my $event   = $options{event};
-
-        logger->log( DEBUG, "schedule( $timeout, $for, $event )" ) if DEBUG;
-
-        my $timer = Acktor::Timer->new(
-            timeout  => $timeout,
-            callback => sub { $for->send($event) }
-        );
-
-        $dispatcher->schedule( $timer );
-
-        return $timer;
+        return $dispatcher->schedule( %options );
     }
 
     method spawn ($props) {

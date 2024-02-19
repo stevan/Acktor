@@ -3,7 +3,9 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
+use Acktor::Event;
 use Acktor::Timers;
+use Acktor::System::Init;
 
 class Acktor::Scheduler {
     use Acktor::Logging;
@@ -14,12 +16,8 @@ class Acktor::Scheduler {
     field %mailboxes;
     field @deadletters;
 
-    field %buffer;
-
+    field %msg_buffer;
     field @to_be_run;
-    field %to_be_run;
-
-    field $is_running = false;
 
     ADJUST {
         $timers = Acktor::Timers->new;
@@ -42,22 +40,31 @@ class Acktor::Scheduler {
     # ...
 
     method schedule_message ($to, $event) {
-        $is_running && return ! push @{ $buffer{ refaddr $to } //= [ $to ] } => $event;
-
-        if ( my $m = $mailboxes{ refaddr $to } ) {
-            $m->enqueue_message( $event );
-            $to_be_run{ refaddr $m } //= $m;
-        } else {
-            push @deadletters => [ $to, $event ];
-        }
+        push @{ $msg_buffer{ refaddr $to } //= [ $to ] } => $event;
     }
 
     method schedule_callback ($f) {
         push @to_be_run => $f;
     }
 
-    method schedule_timer ($timer) {
+    method schedule_timer (%options) {
+
+        my $timeout = $options{after};
+        my $for     = $options{for};
+        my $event   = $options{event};
+
+        logger->log( DEBUG, "schedule( $timeout, $for, $event )" ) if DEBUG;
+
+        my $timer = Acktor::Timer->new(
+            timeout  => $timeout,
+            callback => sub {
+                $self->schedule_message( $for, $event );
+            }
+        );
+
         $timers->schedule_timer($timer);
+
+        return $timer;
     }
 
     # ...
@@ -69,22 +76,10 @@ class Acktor::Scheduler {
             $timers->tick;
         }
 
-        my @to_run;
-        my %to_run;
-
         if ( @to_be_run ) {
-            @to_run    = @to_be_run;
-            @to_be_run = ();
-        }
+            logger->log( DEBUG, "tick =>> running callbacks( ".(join ', ' => (map "$_", @to_be_run))." )" ) if DEBUG;
 
-        if ( keys %to_be_run ) {
-            %to_run    = %to_be_run;
-            %to_be_run = ();
-        }
-
-        if ( @to_run ) {
-            logger->log( DEBUG, "tick =>> running callbacks( ".(join ', ' => (map "$_", @to_run))." )" ) if DEBUG;
-
+            my @to_run = @to_be_run;
             # we need to be careful with running these
             # as they are arbitrary callbacks ...
             foreach my $f (@to_run) {
@@ -96,64 +91,31 @@ class Acktor::Scheduler {
                     # which will need to be signified by the error object
                 }
             }
+
+            @to_be_run = ();
         }
 
-
-        if ( keys %to_run ) {
-            logger->log( DEBUG, "tick =>> running mailboxes( ".
-                                (join ', ' => (map $_->owner->to_string, values %to_run)).
-                                " )" ) if DEBUG;
-
-
-            $is_running = true;
-
-            # IMPORTANT:
-            # The block of code below is meant to enforce
-            # the async boundary, such that all messages
-            # sent within a given tick are not processed
-            # until the sunsequent tick. It needs to be
-            # done in this manner because we do not have
-            # a single message queue.
-            #
-            # Without this we would (sorta) still respect
-            # the overall ordering of messages, however
-            # only mailboxes that are scheduled will be
-            # able to receive these new messages, while
-            # others will wait until the next tick. In
-            # theory this should not really affect the
-            # message ordering, but it does make it much
-            # harder to reason about the execution of
-            # the overall system.
-            #
-            # So while it might seem like overkill, it
-            # will probably help avoid a lot of subtle
-            # bugs in the future.
-            #
-            # NOTE: this runs from bottom to top ...
-            #map { $_->resume } # 3. resume all the mailboxes, unbuffering the new messages
-            map { $_->tick   } # 2. tick all the mailboxes, processing all the messages
-            #map { $_->pause  } # 1. pause all the mailboxes, buffers new messages
-            values %to_run;
-
-            # NOTE: mailboxes handle their own exceptions ...
-
-            $is_running = false;
-
-            if (keys %buffer) {
-                map {
-                    my ($to, @messages) = @$_;
-                    if ( my $m = $mailboxes{ refaddr $to } ) {
-                        $m->enqueue_messages( @messages );
-                        $to_be_run{ refaddr $m } //= $m;
-                    } else {
-                        push @deadletters => [ $to, [ @messages ] ];
-                    }
-                } values %buffer;
-                %buffer = ();
-            }
+        if ( keys %msg_buffer ) {
+            logger->log( DEBUG, "tick =>> running mailboxes" ) if DEBUG;
+            $_->tick foreach $self->flush_buffered_mailboxes;
         }
     }
 
+    method flush_buffered_mailboxes {
+        return unless %msg_buffer;
+        my @mailboxes = values %msg_buffer;
+        %msg_buffer = ();
+        return map {
+            my ($to, @msgs) = @$_;
+            if ( my $m = $mailboxes{ refaddr $to } ) {
+                $m->enqueue_messages( @msgs );
+                $m;
+            } else {
+                push @deadletters => [ $to, [ @msgs ] ];
+                ();
+            }
+        } @mailboxes;
+    }
 
     # TODO:
     # I need to take advantage of the %options here to
@@ -169,7 +131,7 @@ class Acktor::Scheduler {
             logger->line( "scheduler::tick($tick)" ) if DEBUG;
 
             # FIXME: this logic is confusing
-            if ( scalar @to_be_run == 0 && scalar keys %to_be_run == 0 && !$timers->has_timers ) {
+            if ( scalar @to_be_run == 0 && scalar keys %msg_buffer == 0 && !$timers->has_timers ) {
                 last if $run_until_done;
                 logger->log( DEBUG, '=>> nothing to run, ... yet' ) if DEBUG;
             }
@@ -178,7 +140,7 @@ class Acktor::Scheduler {
             }
 
             # if there is nothing to be run ...
-            if ( scalar @to_be_run == 0 && scalar keys %to_be_run == 0 ) {
+            if ( scalar @to_be_run == 0 && scalar keys %msg_buffer == 0 ) {
                 # check timers first ...
                 if (my $wait = $timers->should_wait) {
                     logger->log( WARN, "... waiting ($wait)" ) if WARN;

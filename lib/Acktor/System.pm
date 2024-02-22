@@ -41,14 +41,14 @@ class Acktor::System {
     }
 
     method wait {
-        logger->line( "system::wait - start" ) if DEBUG;
+        logger->line( "system::wait" ) if DEBUG;
         while (%forked) {
             my $child = wait();
             last if $child == -1;
             logger->log( DEBUG, "system::wait - got pid($child) exit" ) if DEBUG;
             delete $forked{$child};
         }
-        logger->line( "system::wait - end" ) if DEBUG;
+        logger->line( "system::wait - finished" ) if DEBUG;
     }
 }
 

@@ -35,26 +35,52 @@ class Echo :isa(Acktor) {
     }
 }
 
-sub init ($ctx) {
-    logger->log( INFO, ">> runnning init" ) if INFO;
 
-    my $Echo = spawn( actor_of Echo:: );
-    logger->log( INFO, ">> got actor Echo($Echo)" ) if INFO;
+my $sys = Acktor::System->new;
 
-    $Echo->send( event *Echo::Echo => "Hello" );
+$sys->fork(
+    listen_on  => '127.0.0.1:3000',
+    connect_to => [ '127.0.0.1:3001' ],
+    log_to     => 'parent.log',
+    init       => sub ($ctx) {
+        my $Echo = spawn( actor_of Echo:: );
+        $ctx->schedule(
+            event => event( *Echo::End ),
+            for   => $Echo,
+            after => 5,
+        );
+    }
+);
 
-    $ctx->schedule(
-        event => event( *Echo::Echo => "Hello Again" ),
-        for   => $Echo,
-        after => 1,
-    );
+$sys->fork(
+    listen_on  => '127.0.0.1:3001',
+    connect_to => [ '127.0.0.1:3000' ],
+    init       => sub ($ctx) {
+        logger->log( INFO, ">> runnning init" ) if INFO;
 
-    $ctx->schedule(
-        event => event( *Echo::End ),
-        for   => $Echo,
-        after => 3,
-    );
-}
+        my $Echo = spawn( actor_of Echo:: );
+        logger->log( INFO, ">> got actor Echo($Echo)" ) if INFO;
+
+        $Echo->send( event *Echo::Echo => "Hello" );
+
+        $ctx->schedule(
+            event => event( *Echo::Echo => "Hello Again" ),
+            for   => $Echo,
+            after => 1,
+        );
+
+        $ctx->schedule(
+            event => event( *Echo::End ),
+            for   => $Echo,
+            after => 3,
+        );
+    },
+);
+
+$sys->wait;
+
+
+=pod
 
 if (my $pid = fork()) {
 
@@ -91,3 +117,5 @@ if (my $pid = fork()) {
 
     exit();
 }
+
+=cut

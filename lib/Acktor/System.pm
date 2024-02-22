@@ -3,6 +3,7 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
+use IO::File;
 use Acktor::Dispatcher;
 
 class Acktor::System {
@@ -30,9 +31,7 @@ class Acktor::System {
         else {
 
             if (my $log_to = delete $options{log_to}) {
-                my $log = IO::File->new(">${log_to}") or die "Could not open log($log_to) because: $!";
-                *STDOUT = $log;
-                *STDERR = $log;
+                *STDERR = IO::File->new(">${log_to}") or die "Could not open log($log_to) because: $!";
             }
 
             $self->run(%options);
@@ -42,13 +41,14 @@ class Acktor::System {
     }
 
     method wait {
-        logger->line( "system::wait" ) if DEBUG;
+        logger->line( "system::wait - start" ) if DEBUG;
         while (%forked) {
             my $child = wait();
             last if $child == -1;
-            logger->line( "system::wait got pid($child) exit" ) if DEBUG;
+            logger->log( DEBUG, "system::wait - got pid($child) exit" ) if DEBUG;
             delete $forked{$child};
         }
+        logger->line( "system::wait - end" ) if DEBUG;
     }
 }
 

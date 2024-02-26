@@ -1,4 +1,46 @@
 
+Remove the Dispatcher, merge into System and Scheduler
+
+Organize the namespaces:
+
+```
+Acktor/
+    Context.pm
+    Ref.pm
+    Props.pm
+
+    System.pm
+
+    Streams.pm
+    Streams/
+        *.pm
+
+
+    Logging.pm
+    Logging/
+        Logger.pm
+
+    Behaviors.pm
+    Behaviors/
+        Behavior.pm
+        Behavior/
+            Await.pm
+            Method.pm
+
+    Core/
+        Scheduler.pm
+        Scheduler/
+            Timers.pm
+            Timer.pm
+
+    Remote/
+        Ref.pm
+        PostOffice.pm
+        PostOffice/
+            *.pm
+
+```
+
 <!---------------------------------------------------------------------------->
 # TODO
 <!---------------------------------------------------------------------------->

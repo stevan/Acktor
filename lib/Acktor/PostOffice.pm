@@ -7,7 +7,7 @@ use JSON::XS;
 
 use Acktor::PostOffice::Listener;
 use Acktor::PostOffice::ClientConnection;
-use Acktor::PostOffice::Address;
+use Acktor::Remote::Address;
 
 class Acktor::PostOffice {
     use Acktor::Logging;
@@ -30,7 +30,7 @@ class Acktor::PostOffice {
 
     method listen_on ($address) {
 
-        my $addr = Acktor::PostOffice::Address->new( address => $address );
+        my $addr = Acktor::Remote::Address->new( address => $address );
 
         my $socket = IO::Socket::INET->new(
             Listen    => SOMAXCONN,
@@ -52,7 +52,7 @@ class Acktor::PostOffice {
 
     method connect_to ($address) {
 
-        my $addr = Acktor::PostOffice::Address->new( address => $address );
+        my $addr = Acktor::Remote::Address->new( address => $address );
 
         my $socket = IO::Socket::INET->new(
             PeerHost => $addr->host,
@@ -101,8 +101,8 @@ class Acktor::PostOffice {
         foreach my $letter (@letters) {
             my $data = JSON::XS->new->decode( $letter );
 
-            my $to   = Acktor::PostOffice::Address->new( address => $data->{to} );
-            my $from = Acktor::PostOffice::Address->new( address => $data->{from} );
+            my $to   = Acktor::Remote::Address->new( address => $data->{to} );
+            my $from = Acktor::Remote::Address->new( address => $data->{from} );
 
             my $recipient = $dispatcher->lookup( $to->pid ) // die 'Could not find to: actor('.$to->pack.')';
             my $sender    = $dispatcher->spawn_remote_actor( $from );
@@ -188,6 +188,14 @@ class Acktor::PostOffice {
                 $watcher->handle_write( $self );
             }
         }
+    }
+
+
+    method shutdown {
+        # TODO - implement me ...
+        # - unbind listener
+        # - close all watcher sockets
+        # - flush any buffers needed?
     }
 
 }

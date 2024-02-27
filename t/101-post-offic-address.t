@@ -7,11 +7,11 @@ use builtin      qw[ blessed refaddr true false ];
 use Data::Dumper;
 use Test::More;
 
-use Acktor::PostOffice::Address;
+use Acktor::Remote::Address;
 
 subtest '... simple' => sub {
-    my $addr = Acktor::PostOffice::Address->new( address => '127.0.0.1:3000' );
-    isa_ok($addr, 'Acktor::PostOffice::Address');
+    my $addr = Acktor::Remote::Address->new( address => '127.0.0.1:3000' );
+    isa_ok($addr, 'Acktor::Remote::Address');
 
     is($addr->address, '127.0.0.1:3000', '... got the expected address');
     is($addr->host, '127.0.0.1', '... got the expected host');
@@ -27,8 +27,8 @@ subtest '... simple' => sub {
 };
 
 subtest '... simple' => sub {
-    my $addr = Acktor::PostOffice::Address->new( address => 'foo@127.0.0.1:3000' );
-    isa_ok($addr, 'Acktor::PostOffice::Address');
+    my $addr = Acktor::Remote::Address->new( address => 'foo@127.0.0.1:3000' );
+    isa_ok($addr, 'Acktor::Remote::Address');
 
     is($addr->address, 'foo@127.0.0.1:3000', '... got the expected address');
     is($addr->host, '127.0.0.1', '... got the expected host');
@@ -44,8 +44,8 @@ subtest '... simple' => sub {
 };
 
 subtest '... simple' => sub {
-    my $addr = Acktor::PostOffice::Address->new( host => '127.0.0.1', port => '3000' );
-    isa_ok($addr, 'Acktor::PostOffice::Address');
+    my $addr = Acktor::Remote::Address->new( host => '127.0.0.1', port => '3000' );
+    isa_ok($addr, 'Acktor::Remote::Address');
 
     is($addr->address, '127.0.0.1:3000', '... got the expected address');
     is($addr->host, '127.0.0.1', '... got the expected host');
@@ -61,8 +61,8 @@ subtest '... simple' => sub {
 };
 
 subtest '... simple' => sub {
-    my $addr = Acktor::PostOffice::Address->new( pid => 'foo', host => '127.0.0.1', port => '3000' );
-    isa_ok($addr, 'Acktor::PostOffice::Address');
+    my $addr = Acktor::Remote::Address->new( pid => 'foo', host => '127.0.0.1', port => '3000' );
+    isa_ok($addr, 'Acktor::Remote::Address');
 
     is($addr->address, 'foo@127.0.0.1:3000', '... got the expected address');
     is($addr->host, '127.0.0.1', '... got the expected host');
@@ -78,8 +78,8 @@ subtest '... simple' => sub {
 
 
 subtest '... simple' => sub {
-    my $addr = Acktor::PostOffice::Address->new( port => '3000' );
-    isa_ok($addr, 'Acktor::PostOffice::Address');
+    my $addr = Acktor::Remote::Address->new( port => '3000' );
+    isa_ok($addr, 'Acktor::Remote::Address');
 
     is($addr->address, '127.0.0.1:3000', '... got the expected address');
     is($addr->host, '127.0.0.1', '... got the expected host');
@@ -95,8 +95,8 @@ subtest '... simple' => sub {
 };
 
 subtest '... simple' => sub {
-    my $addr = Acktor::PostOffice::Address->new( pid => 'foo', port => '3000' );
-    isa_ok($addr, 'Acktor::PostOffice::Address');
+    my $addr = Acktor::Remote::Address->new( pid => 'foo', port => '3000' );
+    isa_ok($addr, 'Acktor::Remote::Address');
 
     is($addr->address, 'foo@127.0.0.1:3000', '... got the expected address');
     is($addr->host, '127.0.0.1', '... got the expected host');
@@ -111,8 +111,8 @@ subtest '... simple' => sub {
 };
 
 subtest '... simple' => sub {
-    my $addr = Acktor::PostOffice::Address->new( address => '0002:Echo@127.0.0.1:3001' );
-    isa_ok($addr, 'Acktor::PostOffice::Address');
+    my $addr = Acktor::Remote::Address->new( address => '0002:Echo@127.0.0.1:3001' );
+    isa_ok($addr, 'Acktor::Remote::Address');
 
     is($addr->address, '0002:Echo@127.0.0.1:3001', '... got the expected address');
     is($addr->host, '127.0.0.1', '... got the expected host');
@@ -127,8 +127,8 @@ subtest '... simple' => sub {
 };
 
 subtest '... simple' => sub {
-    my $addr = Acktor::PostOffice::Address->new( address => '0002:Echo::This::Package@127.0.0.1:3001' );
-    isa_ok($addr, 'Acktor::PostOffice::Address');
+    my $addr = Acktor::Remote::Address->new( address => '0002:Echo::This::Package@127.0.0.1:3001' );
+    isa_ok($addr, 'Acktor::Remote::Address');
 
     is($addr->address, '0002:Echo::This::Package@127.0.0.1:3001', '... got the expected address');
     is($addr->host, '127.0.0.1', '... got the expected host');

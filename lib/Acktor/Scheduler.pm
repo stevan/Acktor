@@ -4,7 +4,7 @@ use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
 use Acktor::Event;
-use Acktor::Timers;
+use Acktor::Scheduler::Timers;
 use Acktor::System::Init;
 
 class Acktor::Scheduler {
@@ -20,7 +20,7 @@ class Acktor::Scheduler {
     field @to_be_run;
 
     ADJUST {
-        $timers = Acktor::Timers->new;
+        $timers = Acktor::Scheduler::Timers->new;
     }
 
     # ...
@@ -55,7 +55,7 @@ class Acktor::Scheduler {
 
         logger->log( DEBUG, "schedule( $timeout, $for, $event )" ) if DEBUG;
 
-        my $timer = Acktor::Timer->new(
+        my $timer = Acktor::Scheduler::Timer->new(
             timeout  => $timeout,
             callback => sub {
                 $self->schedule_message( $for, $event );
@@ -162,6 +162,20 @@ class Acktor::Scheduler {
         }
 
         logger->line( "scheduler::exit" ) if DEBUG;
+    }
+
+    method shutdown {
+        # TODO - implement me ...
+        # - post office should be shutdown
+        #   - probably only warn about this
+        # - shutdown all mailboxes
+        foreach my $mailbox (values %mailboxes) {
+            $mailbox->shutdown;
+        }
+        #   - drain their dead letter queue into ours
+        # - continue run loop until all messages are processed
+        #   - there needs to be coordinated shutdown by actors
+        # - this might get messy, hmmm
     }
 }
 

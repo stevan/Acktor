@@ -3,7 +3,7 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
-class Acktor::Timer {
+class Acktor::Scheduler::Timer {
     our $TIMER_PRECISION_DECIMAL = 0.001;
     our $TIMER_PRECISION_INT     = 1000;
 
@@ -34,7 +34,7 @@ __END__
 
 =head1 NAME
 
-Acktor::Timer
+Acktor::Scheduler::Timer
 
 =head1 DESCRIPTION
 

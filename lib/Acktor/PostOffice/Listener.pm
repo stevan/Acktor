@@ -5,7 +5,7 @@ use builtin      qw[ blessed refaddr true false ];
 
 use Acktor::PostOffice::ServerConnection;
 
-class Acktor::PostOffice::Listener :isa(Acktor::PostOffice::Watcher) {
+class Acktor::PostOffice::Listener :isa(Acktor::Scheduler::Watcher) {
     use Acktor::Logging;
 
     ADJUST {

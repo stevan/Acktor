@@ -5,9 +5,9 @@ use builtin      qw[ blessed refaddr true false ];
 
 use Time::HiRes;
 
-use Acktor::Timer;
+use Acktor::Scheduler::Timer;
 
-class Acktor::Timers {
+class Acktor::Scheduler::Timers {
     use Acktor::Logging;
 
     field $time;
@@ -91,7 +91,7 @@ class Acktor::Timers {
         }
 
         # do not wait for negative values ...
-        if ($wait < $Acktor::Timer::TIMER_PRECISION_DECIMAL) {
+        if ($wait < $Acktor::Scheduler::Timer::TIMER_PRECISION_DECIMAL) {
             $wait = 0;
         }
 
@@ -132,7 +132,7 @@ __END__
 
 =head1 NAME
 
-Acktor::Timers
+Acktor::Scheduler::Timers
 
 =head1 DESCRIPTION
 

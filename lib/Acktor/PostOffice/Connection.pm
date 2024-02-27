@@ -6,7 +6,7 @@ use builtin      qw[ blessed refaddr true false ];
 use Acktor::PostOffice::BufferedReader;
 use Acktor::PostOffice::BufferedWriter;
 
-class Acktor::PostOffice::Connection :isa(Acktor::PostOffice::Watcher) {
+class Acktor::PostOffice::Connection :isa(Acktor::Scheduler::Watcher) {
     use Acktor::Logging;
 
     field $reader;

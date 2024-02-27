@@ -6,9 +6,10 @@ use builtin      qw[ blessed refaddr true false ];
 class Acktor::Mailbox {
     use Acktor::Logging;
 
-    use constant STOPPED => \'STOP';
-    use constant PAUSED  => \'PAUSE';
-    use constant RUNNING => \'RUN';
+    use constant SHUTDOWN => \'SHUTDOWN';
+    use constant STOPPED  => \'STOPPED';
+    use constant PAUSED   => \'PAUSED';
+    use constant RUNNING  => \'RUNNING';
 
     field $actor_ref :param;
 
@@ -95,6 +96,15 @@ class Acktor::Mailbox {
         }
 
         $self;
+    }
+
+
+    method shutdown {
+        # TODO - implement me ...
+        # - status to SHUTDOWN
+        $status = SHUTDOWN;
+        # - shuts down the Actor instance
+        # - all messages go to the scheduler dead letter queue (how?)
     }
 }
 

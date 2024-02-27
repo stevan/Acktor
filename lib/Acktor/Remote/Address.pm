@@ -3,7 +3,7 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
-class Acktor::PostOffice::Address {
+class Acktor::Remote::Address {
     use Acktor::Logging;
 
     use if LOG_LEVEL, 'overload' => '""' => \&to_string;
@@ -36,7 +36,7 @@ class Acktor::PostOffice::Address {
     # ...
 
     method with_pid ($pid) {
-        Acktor::PostOffice::Address->new(
+        Acktor::Remote::Address->new(
             pid  => $pid,
             host => $host,
             port => $port,
@@ -63,7 +63,7 @@ __END__
 
 =head1 NAME
 
-Acktor::PostOffice::Address
+Acktor::Remote::Address
 
 =head1 DESCRIPTION
 

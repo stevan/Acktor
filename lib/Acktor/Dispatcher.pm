@@ -182,7 +182,8 @@ class Acktor::Dispatcher {
     }
 
     method shutdown {
-        # TODO - implement me ...
+        $post_office->shutdown;
+        $scheduler->shutdown;
     }
 }
 

@@ -126,7 +126,7 @@ This means we need to manage the timeout, so we have to cancel if we get a match
 
 - also decide how Timeout events will look.
     - do we use strings?
-    - known constant (ex: `*Acktor::Timers::Timeout`)?
+    - known constant (ex: `*Acktor::Scheduler::Timers::Timeout`)?
     - import a known constant so you can say `*Timeout`
     - is this a case for Protocols?
 

@@ -4,6 +4,7 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
+use Test::More;
 use Data::Dumper;
 
 use Acktor;
@@ -36,13 +37,14 @@ class Echo :isa(Acktor) {
 
 
 my $sys = Acktor::System->new;
+isa_ok($sys, 'Acktor::System');
 
 $sys->fork(
     listen_on  => '127.0.0.1:3000',
     connect_to => [ '127.0.0.1:3001' ],
     log_to     => 'parent.log',
     init       => sub ($ctx) {
-        my $Echo = spawn( actor_of Echo:: );
+        my $Echo = spawn Props[ Echo:: ];
         $ctx->schedule(
             event => event( *Echo::End ),
             for   => $Echo,
@@ -57,7 +59,7 @@ $sys->fork(
     init       => sub ($ctx) {
         logger->log( INFO, ">> runnning init" ) if INFO;
 
-        my $Echo = spawn( actor_of Echo:: );
+        my $Echo = spawn Props[ Echo:: ];
         logger->log( INFO, ">> got actor Echo($Echo)" ) if INFO;
 
         $Echo->send( event *Echo::Echo => "Hello" );
@@ -78,43 +80,5 @@ $sys->fork(
 
 $sys->wait;
 
+done_testing;
 
-=pod
-
-if (my $pid = fork()) {
-
-    my $log = IO::File->new('>parent.log') or die "Could not open log because: $!";
-    *STDOUT = $log;
-    *STDERR = $log;
-
-    my $system = Acktor::System->new;
-
-    $system->run(
-        listen_on  => '127.0.0.1:3000',
-        connect_to => [ '127.0.0.1:3001' ],
-        init       => sub ($ctx) {
-            my $Echo = spawn( actor_of Echo:: );
-            $ctx->schedule(
-                event => event( *Echo::End ),
-                for   => $Echo,
-                after => 10,
-            );
-        },
-    );
-
-    waitpid($pid, 0);
-} else {
-
-    my $system = Acktor::System->new;
-
-    $system->run(
-        init       => \&init,
-        listen_on  => '127.0.0.1:3001',
-        connect_to => [ '127.0.0.1:3000' ]
-    );
-
-
-    exit();
-}
-
-=cut

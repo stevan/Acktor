@@ -18,14 +18,16 @@ use Acktor::Streams;
 
 sub init ($ctx) {
 
-    my $p = spawn actor_of Acktor::Streams::Publisher::;
-    my $f = spawn actor_of Acktor::Streams::Processor:: => (
-        request_size => 10,
+    my $p = spawn Props[ Acktor::Streams::Publisher:: ];
+    my $f = spawn Props[
+        Acktor::Streams::Processor:: => (
+            request_size => 10,
 
-        map    => sub ($x) {  $x * 2 },
-        filter => sub ($x) { ($x % 2) == 0 }
-    );
-    my $s = spawn actor_of Acktor::Streams::Subscriber:: => ( request_size => 10 );
+            map    => sub ($x) {  $x * 2 },
+            filter => sub ($x) { ($x % 2) == 0 }
+        )
+    ];
+    my $s = spawn Props[ Acktor::Streams::Subscriber:: => ( request_size => 10 ) ];
 
     $p->send( event *Acktor::Streams::Publisher::Subscribe => $f );
     $f->send( event *Acktor::Streams::Publisher::Subscribe => $s );

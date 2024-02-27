@@ -28,7 +28,7 @@ class Pinger :isa(Acktor) {
 }
 
 sub init ($ctx) {
-    my $Pinger = spawn( actor_of( Pinger:: ) );
+    my $Pinger = spawn Props[ Pinger:: ];
 
     $Pinger->send( event *Pinger::Call );
 }

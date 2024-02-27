@@ -41,7 +41,7 @@ class Ping :isa(Acktor) {
     our $BOUNCES = 0;
 
     method Start :Receive {
-        $pong = spawn( actor_of Pong:: );
+        $pong = spawn Props[ Pong:: ];
         isa_ok($pong, 'Acktor::Ref');
         is($pong->props->class, 'Pong', '... the Actor is of the expected class');
 
@@ -61,7 +61,7 @@ class Ping :isa(Acktor) {
 }
 
 sub init ($ctx) {
-    my $Ping = spawn( actor_of *Ping::, ( max_bounce => 5 ) );
+    my $Ping = spawn Props[ Ping::, ( max_bounce => 5 ) ];
     isa_ok($Ping, 'Acktor::Ref');
     is($Ping->props->class, 'Ping', '... the Actor is of the expected class');
 

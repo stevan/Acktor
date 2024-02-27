@@ -66,12 +66,12 @@ class Client :isa(Acktor) {
 }
 
 sub init ($ctx) {
-    my $Service = spawn( actor_of(*Service::, alias => 'service'));
+    my $Service = spawn Props[ Service::, alias => 'service' ];
 
     isa_ok($Service, 'Acktor::Ref');
     is($Service->props->class, 'Service', '... the Actor is of the expected class');
 
-    my $Client  = spawn( actor_of(*Client:: ));
+    my $Client  = spawn Props[ Client:: ];
 
     isa_ok($Client, 'Acktor::Ref');
     is($Client->props->class, 'Client', '... the Actor is of the expected class');

@@ -21,12 +21,12 @@ class Acktor::Streams::Publisher :isa(Acktor) {
         logger->log( INFO, "*Subscribe got subscriber($s)" ) if INFO;
 
         $subscriber   = $s;
-        $subscription = spawn(
-            actor_of Acktor::Streams::Subscription:: => (
+        $subscription = spawn Props[
+            Acktor::Streams::Subscription:: => (
                 subscriber => $subscriber,
                 publisher  => context->self
             )
-        );
+        ];
 
         $subscriber->send( event *Acktor::Streams::Subscriber::OnSubscribe => $subscription );
     }

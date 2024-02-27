@@ -20,7 +20,7 @@ sub import {
         '&context'  => \&context,
         '&sender'   => \&sender,
         '&logger'   => \&logger,
-        '&actor_of' => \&actor_of,
+        '&Props'    => \&Props,
     );
 }
 
@@ -86,7 +86,10 @@ sub await ($symbol, $method) {
     );
 }
 
-sub actor_of ($class, %args) {
+sub Props ($props) {
+
+    my ($class, %args) = @$props;
+
     $class =~ s/^\*(main\:\:)?(.*)\:\:/$2/;
 
     my $alias = delete $args{alias};

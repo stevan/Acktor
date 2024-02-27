@@ -37,7 +37,7 @@ class Hello :isa(Acktor) {
 }
 
 sub init ($ctx) {
-    my $hello = spawn( actor_of *Hello:: );
+    my $hello = spawn Props[ Hello:: ];
     isa_ok($hello, 'Acktor::Ref');
     is($hello->props->class, 'Hello', '... the Actor is of the expected class');
 

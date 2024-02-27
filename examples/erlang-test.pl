@@ -31,14 +31,16 @@ class ErlangTest :isa(Acktor) {
 }
 
 sub init ($ctx) {
-    my $start = spawn( actor_of *ErlangTest:: => (id => 0) );
+    my $start = spawn Props[ ErlangTest:: => (id => 0) ];
 
     my $t = $start;
     foreach my $id ( 1 .. $NUM_PROCESSES ) {
-        $t = spawn( actor_of *ErlangTest:: => (
-            id   => $id,
-            next => $t,
-        ));
+        $t = spawn Props[
+            ErlangTest:: => (
+                id   => $id,
+                next => $t,
+            )
+        ];
     }
 
     $MSG_START = time();

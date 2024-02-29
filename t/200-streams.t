@@ -22,9 +22,8 @@ sub init ($ctx) {
     my $f = spawn Props[
         Acktor::Streams::Processor:: => (
             request_size => 10,
-
-            map    => sub ($x) {  $x * 2 },
-            filter => sub ($x) { ($x % 2) == 0 }
+            map          => sub ($x) {  $x * 2 },
+            filter       => sub ($x) { ($x % 2) == 0 },
         )
     ];
     my $s = spawn Props[ Acktor::Streams::Subscriber:: => ( request_size => 10 ) ];
@@ -38,9 +37,9 @@ sub init ($ctx) {
     }
 
     context->schedule(
-        event => event( *Acktor::Streams::Publisher::Close ),
+        after => 2,
         for   => $p,
-        after => 2
+        event => event *Acktor::Streams::Publisher::Close
     );
 }
 

@@ -39,6 +39,8 @@ class Echo :isa(Acktor) {
 my $sys = Acktor::System->new;
 isa_ok($sys, 'Acktor::System');
 
+unlink 'parent.log' if -e 'parent.log';
+
 $sys->fork(
     listen_on  => '127.0.0.1:3000',
     connect_to => [ '127.0.0.1:3001' ],

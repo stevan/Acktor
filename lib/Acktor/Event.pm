@@ -15,6 +15,14 @@ class Acktor::Event {
     method payload { $payload }
     method context { $context }
 
+    method clone ($with_context=undef) {
+        return Acktor::Event->new(
+            symbol  => $symbol,
+            payload => $payload,
+            context => $with_context // $context,
+        );
+    }
+
     field $_to_str;
     method to_string {
         $_to_str //= sprintf 'Event[ %s => ( %s ) ]' =>

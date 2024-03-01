@@ -47,7 +47,7 @@ __END__
 
 =head1 NAME
 
-Acktor::Ref
+Acktor::Remote::Ref
 
 =head1 DESCRIPTION
 

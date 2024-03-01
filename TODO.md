@@ -1,45 +1,30 @@
 
-Remove the Dispatcher, merge into System and Scheduler
+- Port Promises from Stella
 
-Organize the namespaces:
+- Implement Futures
+    - Future::Ref should hold a Promise
+        - when it gets the response, it calls resolve
+        - if it times out, it calls reject
+    - the Future function will connect the Future::Ref to the Promise
+        - and return the Promise for then-ing
 
-```
-Acktor/
-    Context.pm
-    Ref.pm
-    Props.pm
+```perl
 
-    System.pm
+my $f = Future(
+    to         => $foo,
+    event      => event( *Foo::BarRequest ),
+    timeout    => 5,
+);
 
-    Streams.pm
-    Streams/
-        *.pm
+$f->then(method ($e) {
+    ...
+});
 
-
-    Logging.pm
-    Logging/
-        Logger.pm
-
-    Behaviors.pm
-    Behaviors/
-        Behavior.pm
-        Behavior/
-            Await.pm
-            Method.pm
-
-    Core/
-        Scheduler.pm
-        Scheduler/
-            Timers.pm
-            Timer.pm
-
-    Remote/
-        Ref.pm
-        PostOffice.pm
-        PostOffice/
-            *.pm
 
 ```
+
+
+
 
 <!---------------------------------------------------------------------------->
 # TODO

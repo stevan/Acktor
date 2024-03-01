@@ -205,15 +205,9 @@ class Window :isa(Acktor) {
 
         $self->clear_screen;
         $self->home_cursor;
+
         $self->hide_cursor;
         $keyboard->turn_echo_off;
-
-        $SIG{INT} = sub {
-            $self->show_cursor;
-            $keyboard->turn_echo_on;
-            die "Interuptted!";
-        };
-
         $keypress_timer = context->schedule(
             event => event( *CheckKeyPress ),
             for   => context->self,
@@ -227,6 +221,7 @@ class Window :isa(Acktor) {
         $self->show_cursor;
         $keyboard->turn_echo_on;
         $keypress_timer->cancel;
+
         $_->send( event *Widget::Stop ) foreach @elements;
     }
 
@@ -260,23 +255,30 @@ sub init ($ctx) {
     ];
 
     my $clock = spawn Props[ Widget::, (
-            top  => 5,
-            left => 30,
+            top  => 1,
+            left => 20,
             box  => Clock->new( contents => 'foo' )
         )
     ];
 
     $window->send( event *Window::AddElements  => $widget, $clock );
-    $window->send( event *Window::AddListeners => $widget, $clock );
+    $window->send( event *Window::AddListeners => $widget );
     $window->send( event *Window::Start );
 
     $clock->send( event *Widget::Animate => 1 );
 
-    $ctx->schedule(
-        event => event( *Window::Stop ),
+    my $Stop = event( *Window::Stop );
+
+    my $self_destruct = $ctx->schedule(
+        event => $Stop,
         for   => $window,
-        after => 10,
+        after => 5,
     );
+
+    $SIG{INT} = sub {
+        $self_destruct->cancel;
+        $window->send( $Stop );
+    };
 }
 
 my $system = Acktor::System->new;

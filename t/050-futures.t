@@ -37,4 +37,6 @@ warn $future->[1]->{on_error}->();
 
 #warn $_->() foreach @$future;
 
+pass('... done');
+
 done_testing;

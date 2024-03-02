@@ -17,12 +17,34 @@ use constant RIGHT_ALIGN => 2;
 use constant ACTIVE   => true;
 use constant INACTIVE => false;
 
+use constant BLACK   => 0;
+use constant RED     => 1;
+use constant GREEN   => 2;
+use constant YELLOW  => 3;
+use constant BLUE    => 4;
+use constant MAGENTA => 5;
+use constant CYAN    => 6;
+use constant WHITE   => 7;
+
+sub color ($box, $color) {
+    my @out;
+    foreach my $line (@$box) {
+        push @out => "\e[38;5;${color};m${line}\e[0m";
+    }
+    return \@out;
+}
+
+sub uncolor ($x) {
+    $x =~ s/\e\[38\;5\;[0-7]\;m//g;
+    $x =~ s/\e\[0m//g;
+    $x;
+}
 
 sub box ($contents, $height=undef, $width=undef, $align=undef) {
     $align //= LEFT_ALIGN;
     $contents = [ $contents ] unless ref $contents eq 'ARRAY';
 
-    $width //= (length $contents->[0]);
+    $width //= length $contents->[0];
 
     my $format = '%'.($align == LEFT_ALIGN ? '-':'').$width.'s';
 
@@ -133,7 +155,7 @@ sub merge ($b1, $b2, @rest) {
 }
 
 sub dialog ($title, $body, $ok="OK", $cancel="Cancel") {
-    my $buttons = zip( box($ok), box($cancel), box("!") );
+    my $buttons = zip( box($ok), box($cancel) );
     my $width   = max(
         map length $_, @$body, # the longest string in the body
         $title,                # the title
@@ -164,7 +186,6 @@ sub tabbed ($tabs, $body, $height=undef, $width=undef) {
     );
 }
 
-
 say join "\n" => @{
 stack(
     tabbed(
@@ -191,6 +212,18 @@ stack(
         ],
         "Submit",
         "Quit"
+    ),
+
+
+    box(
+        zip(
+            box("Foo"),
+            box("Bar"),
+            box("Baz"),
+        ),
+        10,
+        40,
+        RIGHT_ALIGN
     )
 )
 };

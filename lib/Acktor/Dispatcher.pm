@@ -33,6 +33,8 @@ class Acktor::Dispatcher {
 
     method lookup ($alias) { $lookup{ $alias } }
 
+    method scheduler { $scheduler }
+
     ## ----------------------------------------------------
     ## Spawn
     ## ----------------------------------------------------

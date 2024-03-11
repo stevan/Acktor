@@ -101,9 +101,9 @@ sub Props ($props) {
     );
 }
 
-sub logger {
-    $CURRENT_CONTEXT // die 'Cannot call `logger` outside of an active Acktor::Context';
-    Acktor::Logging::logger( $CURRENT_CONTEXT )
+sub logger ($ctx=undef) {
+    $CURRENT_CONTEXT // $ctx // die 'Cannot call `logger` outside of an active Acktor::Context';
+    Acktor::Logging::logger( $CURRENT_CONTEXT // $ctx )
 }
 
 sub spawn ($props) {

@@ -44,11 +44,23 @@ sub box ($contents, $height=undef, $width=undef, $align=undef) {
     $align //= LEFT_ALIGN;
     $contents = [ $contents ] unless ref $contents eq 'ARRAY';
 
-    $width //= length $contents->[0];
+    $width = max( $width//0, map length $_, @$contents );
 
-    my $format = '%'.($align == LEFT_ALIGN ? '-':'').$width.'s';
+    my @body = @$contents;
 
     $width += 2;
+
+    if ($align == RIGHT_ALIGN) {
+        warn "HERE";
+        foreach my $i (0 .. $#body) {
+            warn "i: $i width: $width length: ".length($body[$i])." diff: ".($width - length($body[$i]));
+            if (length($body[$i]) < $width) {
+                warn $body[$i];
+                $body[$i] = (' ' x ($width - length($body[$i]))) . $body[$i];
+                warn $body[$i];
+            }
+        }
+    }
 
     my $h = scalar @$contents;
     if ($height && $height > $h) {
@@ -59,7 +71,7 @@ sub box ($contents, $height=undef, $width=undef, $align=undef) {
 
     return [
         ('╭'.('─' x $width).'╮'),
-        (map { '│ '.(sprintf $format => $_).' │' } @$contents),
+        (map { '│ '.( $_ ).' │' } @body),
         ('╰'.('─' x $width).'╯'),
     ];
 }
@@ -187,37 +199,37 @@ sub tabbed ($tabs, $body, $height=undef, $width=undef) {
 }
 
 say join "\n" => @{
-stack(
-    tabbed(
-        [
-            tab('System', undef, undef, undef, INACTIVE),
-            tab('Network', undef, undef, undef, ACTIVE),
-            tab('Metrics', undef, undef, undef, INACTIVE)
-        ],
-        [
-            'The system is the system. Yah know what I mean?'
-        ],
-        10,
-        60
-    ),
-
-    dialog(
-        "Hello World!",
-        [
-            "This is a basic dialog box, it has a body,",
-            "as well as `ok` & `cancel` buttons.",
-            "",
-            "This can be pretty flexible if you want!",
-            "",
-        ],
-        "Submit",
-        "Quit"
-    ),
+#stack(
+    #tabbed(
+    #    [
+    #        tab('System', undef, undef, undef, INACTIVE),
+    #        tab('Network', undef, undef, undef, ACTIVE),
+    #        tab('Metrics', undef, undef, undef, INACTIVE)
+    #    ],
+    #    [
+    #        'The system is the system. Yah know what I mean?'
+    #    ],
+    #    10,
+    #    60
+    #),
+#
+    #dialog(
+    #    "Hello World!",
+    #    [
+    #        "This is a basic dialog box, it has a body,",
+    #        "as well as `ok` & `cancel` buttons.",
+    #        "",
+    #        "This can be pretty flexible if you want!",
+    #        "",
+    #    ],
+    #    "Submit",
+    #    "Quit"
+    #),
 
 
     box(
         zip(
-            box("Foo"),
+            color(box("Foo"), RED),
             box("Bar"),
             box("Baz"),
         ),
@@ -225,7 +237,7 @@ stack(
         40,
         RIGHT_ALIGN
     )
-)
+#)
 };
 
 

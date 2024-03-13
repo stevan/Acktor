@@ -37,7 +37,13 @@ class RoundedBoxStyle :isa(BoxStyle) {
     use constant right_vert_line  => '│';
 }
 
-class RoundedBottomTabStyle :isa(RoundedBoxStyle) {
+class RoundedBottomOpenTabStyle :isa(RoundedBoxStyle) {
+    use constant top_left         => '┐';
+    use constant top_right        => '┌';
+    use constant top_horz_line    => ' ';
+}
+
+class RoundedBottomClosedTabStyle :isa(RoundedBoxStyle) {
     use constant top_left         => '┬';
     use constant top_right        => '┬';
 }
@@ -177,7 +183,7 @@ class Card {
             origin  => [ 4, $height - 3 ],
             height  => 1,
             width   => $width - 12,
-            style   => RoundedBottomTabStyle::,
+            style   => RoundedBottomOpenTabStyle::,
             content => '...',
             color   => [ 0x33, 0x66, 0x99 ]
         );

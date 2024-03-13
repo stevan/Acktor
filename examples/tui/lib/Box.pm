@@ -10,7 +10,7 @@ class Box {
     use Coords;
     use ANSI;
 
-    field $origin  :param;
+    field $origin  :param = [0, 0];
     field $height  :param;
     field $width   :param;
     field $style   :param;
@@ -19,6 +19,7 @@ class Box {
     field $content :param = undef;
 
     field $dirty = true;
+    field $clear = '';
 
     field $stage;
 
@@ -44,6 +45,29 @@ class Box {
     method set_fill    ($f) { $dirty = true; $fill    = $f }
     method set_content ($c) { $dirty = true; $content = $c }
 
+    method move_by ($p) {
+        $dirty  = true;
+        $clear  = $self->clear;
+        $origin = add( $origin, $p );
+    }
+
+    method move_to ($p) {
+        $dirty  = true;
+        $clear  = $self->clear;
+        $origin = $p;
+    }
+
+    method clear {
+        my $cleared = format_repeat_char(' ', $width + 1 + 2 );
+        my $break   = format_line_break(      $width + 1 + 3 );
+        my $pos     = $stage ? add( $stage->origin, $origin ) : $origin;
+
+        return join '' => (
+            format_move_cursor( reverse map $_+1, @$pos ),
+            (map { $cleared, $break } (1 .. ($height + 2))),
+        );
+    }
+
     method draw {
         my $spacer = defined $fill
             ? join('' => ($fill x ($width + 1)))
@@ -54,6 +78,7 @@ class Box {
         my $break  = format_line_break( $width + 1 + 2 );
         my $pos    = $stage ? add( $stage->origin, $origin ) : $origin;
         return (
+            $clear,
             format_move_cursor( reverse map $_+1, @$pos ),
             join('' => $style->top_left,
                        format_repeat_char($style->top_horz_line, $width),

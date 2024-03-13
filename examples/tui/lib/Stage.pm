@@ -37,6 +37,24 @@ class Stage {
             int(rand( $height - $b->height )),
         ]);
     }
+
+    method align_box ($align, $b) {
+        $b->set_origin(
+            $align eq 'top_left'   ? [ 0                                   , 0 ] :
+            $align eq 'top_center' ? [ int($width / 2) - int($b->width / 2), 0 ] :
+            $align eq 'top_right'  ? [     $width      -     $b->width     , 0 ] :
+
+            $align eq 'middle_left'   ? [ 0                                   , int($height / 2) - int($b->height / 2) ] :
+            $align eq 'middle_center' ? [ int($width / 2) - int($b->width / 2), int($height / 2) - int($b->height / 2) ] :
+            $align eq 'middle_right'  ? [     $width      -     $b->width     , int($height / 2) - int($b->height / 2) ] :
+
+            $align eq 'bottom_left'   ? [ 0                                   , $height - $b->height ] :
+            $align eq 'bottom_center' ? [ int($width / 2) - int($b->width / 2), $height - $b->height ] :
+            $align eq 'bottom_right'  ? [     $width      -     $b->width     , $height - $b->height ] :
+
+            die "No idea how to $align"
+        );
+    }
 }
 
 __END__

@@ -21,13 +21,7 @@ my @boxes = map {
     my $height = int(rand(10)) + 1;
     my $width  = int(rand(20)) + 1;
 
-    my $b = Box->new(
-        origin => [ 0, 0 ],
-        height => $height,
-        width  => $width,
-        style  => RoundedBoxStyle::,
-        fill   => /^(\d)/
-    );
+    my $b = Box->new( height => $height, width => $width, style => RoundedBoxStyle::, fill => /^(\d)/ );
 
     $card->add_element( $b );
     $card->stage->place_box_randomly($b);

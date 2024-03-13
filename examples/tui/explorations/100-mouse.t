@@ -12,6 +12,7 @@ use Term::ReadKey qw[ ReadKey ReadMode ];
 
 use Coords;
 use ANSI;
+use Box;
 
 # https://github.com/tinmarino/mouse_xterm
 
@@ -51,13 +52,16 @@ $SIG{INT} = sub {
 
 term_open();
 
+my $box = Box->new( height => 10, width => 20, style => RoundedBoxStyle::, content => '000, 000' );
+
 my $x = '';
-while (read( STDIN, $x, 24 )) {
+while (read( STDIN, $x, 32 )) {
     if ($x) {
         my $pos = $x;
         if ( my ($x, $y) = ($pos =~ m/\e\[\<\d+\;(\d+)\;(\d+)M/) ) {
-            #print join ', ' => $pos, $x, $y;
-            print format_move_cursor($y, $x), "($x, $y)";
+            $box->move_to([$x - 2, $y - 2]);
+            $box->set_content( sprintf '%03d, %03d' => $x, $y );
+            print $box->draw;
         }
     }
     $x = '';

@@ -7,8 +7,8 @@ use builtin      qw[ blessed refaddr true false ];
 use open         qw[ :std :encoding(UTF-8) ];
 
 use Data::Dumper;
-use Time::HiRes   qw[ sleep ];
-use Term::ReadKey qw[ ReadKey ReadMode ];
+
+$|++;
 
 use Coords;
 use ANSI;
@@ -24,6 +24,8 @@ class BoxStyle {
     method right_vert_line;
 }
 
+# ...
+
 class RoundedBoxStyle :isa(BoxStyle) {
     use constant top_left         => '╭';
     use constant bottom_left      => '╰';
@@ -35,6 +37,13 @@ class RoundedBoxStyle :isa(BoxStyle) {
     use constant right_vert_line  => '│';
 }
 
+class RoundedBottomTabStyle :isa(RoundedBoxStyle) {
+    use constant top_left         => '┬';
+    use constant top_right        => '┬';
+}
+
+# ...
+
 class SquareBoxStyle :isa(BoxStyle) {
     use constant top_left         => '┌';
     use constant bottom_left      => '└';
@@ -45,6 +54,8 @@ class SquareBoxStyle :isa(BoxStyle) {
     use constant left_vert_line   => '│';
     use constant right_vert_line  => '│';
 }
+
+# ...
 
 class SolidBoxStyle :isa(BoxStyle) {
     use constant top_left         => '▁';
@@ -69,28 +80,52 @@ class SolidBoxStyle2 :isa(BoxStyle) {
 }
 
 class Box {
-    field $origin :param;
-    field $height :param;
-    field $width  :param;
-    field $style  :param;
-    field $color  :param = undef;
+    use Coords;
+    use ANSI;
 
-    field $fill   :param = undef;
+    field $origin  :param;
+    field $height  :param;
+    field $width   :param;
+    field $style   :param;
+    field $color   :param = undef;
+    field $fill    :param = undef;
+    field $content :param = undef;
 
-    field $overlap;
+    field $dirty = true;
 
-    method overlaps ($box) { $overlap = $box }
+    method is_dirty { $dirty }
+    method clean    { $dirty = false; }
 
-    method color { $color }
+    method origin  { $origin  }
+    method height  { $height  }
+    method width   { $width   }
+    method style   { $style   }
+    method color   { $color   }
+    method fill    { $fill    }
+    method content { $content }
+
+    method set_origin  ($o) { $dirty = true; $origin  = $o }
+    method set_height  ($h) { $dirty = true; $height  = $h }
+    method set_width   ($w) { $dirty = true; $width   = $w }
+    method set_style   ($s) { $dirty = true; $style   = $s }
+    method set_color   ($c) { $dirty = true; $color   = $c }
+    method set_fill    ($f) { $dirty = true; $fill    = $f }
+    method set_content ($c) { $dirty = true; $content = $c }
 
     method draw {
-        my $spacer = $fill
+        my $spacer = defined $fill
             ? join('' => ($fill x ($width + 1)))
-            : format_move_right($width + 1);
+            : $content
+                ? sprintf("%-".($width + 1)."s" => $content)
+                : format_move_right($width + 1);
+
         my $break  = format_line_break( $width + 1 + 2 );
         return (
-            format_move_cursor( reverse map $_|| 1, @$origin ),
-            join('' => $style->top_left, format_repeat_char($style->top_horz_line, $width), $style->top_right, $break),
+            format_move_cursor( reverse map $_+1, @$origin ),
+            join('' => $style->top_left,
+                       format_repeat_char($style->top_horz_line, $width),
+                       $style->top_right,
+                       $break),
             (map {
                 join('' =>
                     $style->left_vert_line,
@@ -100,48 +135,153 @@ class Box {
                     $style->right_vert_line,
                     $break)
             } (1 .. $height)),
-            join('' => $style->bottom_left, format_repeat_char($style->bottom_horz_line, $width), $style->bottom_right, $break),
+            join('' => $style->bottom_left,
+                       format_repeat_char($style->bottom_horz_line, $width),
+                       $style->bottom_right,
+                       $break),
         )
     }
 
 }
 
+class Card {
+    use Time::HiRes   qw[ sleep time ];
+    use Term::ReadKey qw[ GetTerminalSize ];
 
-my $b1 = Box->new(
-    origin => [1, 1],
-    height => 5,
-    width  => 20,
-    fill   => '▓',
-    style  => SolidBoxStyle2::,
-    color  => [ 100, 100, 255 ]
-);
+    use Coords;
+    use ANSI;
 
-my $b2 = Box->new(
-    origin => [10, 5],
-    height => 10,
-    width  => 20,
-    fill   => '▒',
-    style  => SolidBoxStyle2::,
-    color  => [ 255, 100, 0 ]
-);
+    field $tty :param = \*STDOUT;
 
-my $b3 = Box->new(
-    origin => [22, 10],
-    height => 2,
-    width  => 4,
-    fill   => '░',
-    style  => SolidBoxStyle2::,
-    color  => [ 0, 255, 100 ]
-);
+    field $height;
+    field $width;
 
-$b3->overlaps($b2);
-$b2->overlaps($b1);
+    field $frame = 1;
+    field $start;
+
+    field $status_bar;
+
+    field @elements;
+
+    ADJUST {
+        ($width, $height) = GetTerminalSize();
+
+        push @elements => Box->new(
+            origin => [0, 0],
+            height => $height - 4,
+            width  => $width  - 4,
+            style  => RoundedBoxStyle::,
+        );
+
+        $status_bar = Box->new(
+            origin  => [ 4, $height - 3 ],
+            height  => 1,
+            width   => $width - 12,
+            style   => RoundedBottomTabStyle::,
+            content => '...',
+            color   => [ 0x33, 0x66, 0x99 ]
+        );
+
+        push @elements => $status_bar;
+    }
+
+    method height { $height }
+    method width  { $width  }
+
+    method add_element ($e) {
+        push @elements => $e;
+    }
 
 
-my @one   = $b1->draw;
-my @two   = $b2->draw;
-my @three = $b3->draw;
+    method setup {
+        $tty->print(
+            clear_screen(),
+            home_cursor(),
+            hide_cursor(),
+            enable_alt_buf(),
+        );
 
-print @one, @two, @three;
+        $SIG{INT} = sub {
+            $self->teardown;
+            exit;
+        };
 
-say '' for 0 .. 20;
+        $start = time;
+    }
+
+    method render {
+        my $t = time;
+
+        my @dirty = grep $_->is_dirty, @elements;
+        map { $tty->print( $_->draw ) && $_->clean } @dirty;
+
+        sleep 0.016;
+
+        my $d = (time() - $t);
+        $status_bar->set_content(
+            sprintf(('%-'.$status_bar->width.'s') => join '',
+                sprintf(' dirty: %06d ' => scalar(@dirty)),
+                sprintf(' frame: %06d ' => $frame++),
+                sprintf(' fps: %.03f '  => $frame / (($t - $start) || 1)),
+            )
+        );
+    }
+
+    method teardown {
+        $tty->print(
+            disable_alt_buf(),
+            show_cursor()
+        );
+    }
+
+}
+
+
+my $card = Card->new;
+
+my @boxes = map {
+    my $height = int(rand(10)) + 1;
+    my $width  = int(rand(20)) + 1;
+
+    my $b = Box->new(
+        origin => [
+            int(rand( $card->width  - ($width  + 6) )) + 1,
+            int(rand( $card->height - ($height + 5) )) + 1,
+        ],
+        height => $height,
+        width  => $width,
+        style  => RoundedBoxStyle::,
+        fill   => $_
+    );
+
+    $card->add_element( $b );
+
+    $b;
+} 0 .. 9;
+
+
+$card->setup;
+while (1) {
+    $card->render;
+
+    map { rand() < 0.01 ? $_->set_color([
+        map int(rand(255)), qw[ r g b ]
+    ]) : () } @boxes;
+
+    map { rand() < 0.01 ? $_->set_origin([
+        int(rand( $card->width  - ($_->width  + 6) )) + 1,
+        int(rand( $card->height - ($_->height + 5) )) + 1,
+    ]) : () } @boxes;
+
+}
+$card->teardown;
+
+
+
+
+
+
+
+
+
+

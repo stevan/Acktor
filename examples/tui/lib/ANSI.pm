@@ -6,6 +6,13 @@ use builtin      qw[ export_lexically ];
 
 sub import {
     export_lexically(
+        '&clear_screen'    => \&clear_screen,
+        '&home_cursor'     => \&home_cursor,
+        '&hide_cursor'     => \&hide_cursor,
+        '&show_cursor'     => \&show_cursor,
+        '&enable_alt_buf'  => \&enable_alt_buf,
+        '&disable_alt_buf' => \&disable_alt_buf,
+
         '&format_line_break'   => \&format_line_break,
         '&format_move_cursor'  => \&format_move_cursor,
 
@@ -30,6 +37,16 @@ sub import {
         '&format_color'        => \&format_color,
     );
 }
+
+
+sub clear_screen { "\e[2J" }
+sub home_cursor  { "\e[H" }
+
+sub hide_cursor  { "\e[?25l" }
+sub show_cursor  { "\e[?25h" }
+
+sub enable_alt_buf  { "\e[?1049h" }
+sub disable_alt_buf { "\e[?1049l" }
 
 sub format_line_break ($width) { sprintf "\e[B\e[%dD" => $width }
 sub format_move_cursor   (@to) { sprintf "\e[%d;%dH"  => @to    }

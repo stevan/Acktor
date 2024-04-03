@@ -57,12 +57,12 @@ class Acktor::Dispatcher {
     }
 
     method spawn_future_ref ($to, $event) {
-
+        use Acktor::Future::Future;
         # FIXME:
         # this has to capture the current
         # context so that it can be used
         # in the callbacks
-        my $promise = Acktor::Future::Promise->new(
+        my $promise = Acktor::Future::Future->new(
             scheduler => $scheduler,
             context   => $Acktor::Behaviors::CURRENT_CONTEXT
         );

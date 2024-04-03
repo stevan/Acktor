@@ -93,29 +93,33 @@ sub init ($ctx) {
 
     $document->ask( event *Element::AddElement =>
         Props[ Element:: => ( alias => '#foo', id => 'foo', cdata => 'Foo!!' ) ]
-    )->then(sub ($e) {
-        my ($foo) = $e->payload->@*;
-        $foo->ask( event *Element::AddElement =>
-            Props[ Element:: => ( alias => '#bar', id => 'bar', cdata => 'Bar!!' ) ]
-        );
-    })->then(sub ($e) {
-        my ($bar) = $e->payload->@*;
-
-        $bar->ask( event *Element::AddElement =>
-            Props[ Element:: => ( alias => '#baz', id => 'baz', cdata => 'Baz!!' ) ],
-        );
-    })->then(sub ($e) {
+    )->when(
+        *Element::ElementAdded => sub ($foo) {
+            $foo->ask( event *Element::AddElement =>
+                Props[ Element:: => ( alias => '#bar', id => 'bar', cdata => 'Bar!!' ) ]
+            )
+        }
+    )->when(
+        *Element::ElementAdded => sub ($bar) {
+            $bar->ask( event *Element::AddElement =>
+                Props[ Element:: => ( alias => '#baz', id => 'baz', cdata => 'Baz!!' ) ],
+            )
+        }
+    )->then(sub ($) {
         $window->send( event *Window::ShowAcktorTree );
         $window->send( event *Window::Refresh );
-    })->then(sub ($e) {
-        $document->ask( event *Element::FindElementById => '#bar' );
-    })->then(sub ($e) {
-        my ($bar) = $e->payload->@*;
-
-        $bar->ask( event *Element::AddElement =>
-            Props[ Element:: => ( alias => '#gorch', id => 'gorch', cdata => 'Gorch!!' ) ],
-        );
-    })->then(sub ($e) {
+    })->then(sub ($) {
+        $document->ask( event *Element::FindElementById => '#foo' );
+    })->when(
+        *Element::ElementFound => sub ($bar) {
+            $bar->ask( event *Element::AddElement =>
+                Props[ Element:: => ( alias => '#gorch', id => 'gorch', cdata => 'Gorch!!' ) ],
+            )
+        },
+        *Element::ElementNotFound => sub ($id) {
+            logger->log( WARN, "Could not find Element with ID($id)" ) if WARN;
+        }
+    )->then(sub ($e) {
         $window->send( event *Window::ShowAcktorTree );
         $window->send( event *Window::Refresh );
     })

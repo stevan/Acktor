@@ -3,34 +3,17 @@ use v5.38;
 use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
-class Acktor::Future::Promise {
-
-    use constant IN_PROGRESS => 'in progress';
-    use constant RESOLVED    => 'resolved';
-    use constant REJECTED    => 'rejected';
-
+class Acktor::Future::Future {
     field $scheduler :param;
     field $context   :param;
 
     field $result;
-    field $error;
-
-    field $status;
-
     field @resolved;
-    field @rejected;
 
-    ADJUST {
-        $status = IN_PROGRESS;
-    }
-
-    method status { $status }
     method result { $result }
-    method error  { $error  }
 
-    method is_in_progress { $status eq IN_PROGRESS }
-    method is_resolved    { $status eq RESOLVED    }
-    method is_rejected    { $status eq REJECTED    }
+    method is_in_progress { !  $result }
+    method is_resolved    { !! $result }
 
     my sub wrap ($p, $then) {
         return sub ($value) {
@@ -44,18 +27,15 @@ class Acktor::Future::Promise {
 
             if ($error) {
                 warn $error;
-                $p->reject( $error );
+                $p->resolve( $error );
             }
 
-            if ( $result isa Acktor::Future::Promise ) {
+            if ( $result isa Acktor::Future::Future ) {
                 #warn "GOT PROMISE RESULT $result";
                 $result->then(
                     sub {
                         #warn "Resolving PROMISE RESULT ($result) for P($p)";
-                        $p->resolve(@_); () },
-                    sub {
-                        #warn "REJECTING PROMISE RESULT ($result) for P($p)";
-                        $p->reject(@_);  () },
+                        $p->resolve(@_); () }
                 );
             }
             else {
@@ -65,30 +45,24 @@ class Acktor::Future::Promise {
         };
     }
 
-    method then ($then, $catch=undef) {
+    method then ($handler) {
         my $p = $self->new( scheduler => $scheduler, context => $context );
-        push @resolved => wrap( $p, $then );
-        push @rejected => wrap( $p, $catch // sub {} );
+        push @resolved => wrap( $p, $handler );
         $self->_notify unless $self->is_in_progress;
         $p;
     }
 
-    method resolve ($_result) {
-        #warn "resolve $self";
-        $status eq IN_PROGRESS || die "Cannot resolve. Already ($status)";
-
-        $status = RESOLVED;
-        $result = $_result;
-        $self->_notify;
-        $self;
+    method when (%handlers) {
+        $self->then(sub ($e) {
+            # XXX - catch errors ...
+            $handlers{ $e->symbol }->( $e->payload->@* )
+        });
     }
 
-    method reject ($_error) {
-        #warn "reject";
-        $status eq IN_PROGRESS || die "Cannot reject. Already ($status)";
-
-        $status = REJECTED;
-        $error  = $_error;
+    method resolve ($_result) {
+        #warn "resolve $self";
+        $self->is_in_progress || die "Cannot resolve again, already resolved";
+        $result = $_result;
         $self->_notify;
         $self;
     }
@@ -101,16 +75,11 @@ class Acktor::Future::Promise {
             $value = $result;
             @cbs   = @resolved;
         }
-        elsif ($self->is_rejected) {
-            $value = $error;
-            @cbs   = @rejected;
-        }
         else {
-            die "Bad Notify State ($status)";
+            die "Bad Notify State, not resolved";
         }
 
         @resolved = ();
-        @rejected = ();
 
         #warn "SCHEDULING $self";
         $scheduler->schedule_callback(sub {

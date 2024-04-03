@@ -10,11 +10,13 @@ class Acktor::Future::Promise {
     use constant REJECTED    => 'rejected';
 
     field $scheduler :param;
+    field $context   :param;
 
     field $result;
     field $error;
 
     field $status;
+
     field @resolved;
     field @rejected;
 
@@ -41,13 +43,19 @@ class Acktor::Future::Promise {
             }
 
             if ($error) {
+                warn $error;
                 $p->reject( $error );
             }
 
             if ( $result isa Acktor::Future::Promise ) {
+                #warn "GOT PROMISE RESULT $result";
                 $result->then(
-                    sub { $p->resolve(@_); () },
-                    sub { $p->reject(@_);  () },
+                    sub {
+                        #warn "Resolving PROMISE RESULT ($result) for P($p)";
+                        $p->resolve(@_); () },
+                    sub {
+                        #warn "REJECTING PROMISE RESULT ($result) for P($p)";
+                        $p->reject(@_);  () },
                 );
             }
             else {
@@ -58,7 +66,7 @@ class Acktor::Future::Promise {
     }
 
     method then ($then, $catch=undef) {
-        my $p = $self->new( scheduler => $scheduler );
+        my $p = $self->new( scheduler => $scheduler, context => $context );
         push @resolved => wrap( $p, $then );
         push @rejected => wrap( $p, $catch // sub {} );
         $self->_notify unless $self->is_in_progress;
@@ -66,7 +74,7 @@ class Acktor::Future::Promise {
     }
 
     method resolve ($_result) {
-        #warn "resolve";
+        #warn "resolve $self";
         $status eq IN_PROGRESS || die "Cannot resolve. Already ($status)";
 
         $status = RESOLVED;
@@ -104,8 +112,20 @@ class Acktor::Future::Promise {
         @resolved = ();
         @rejected = ();
 
+        #warn "SCHEDULING $self";
         $scheduler->schedule_callback(sub {
-            $_->($value) foreach @cbs
+            #warn "$self => STATUS: $status";
+
+            # FIXME: this should be here, but it needs to
+            # be here to allow use of context within the
+            # then/catch block. If this is not here then
+            # it will throw an error
+            local $Acktor::Behaviors::CURRENT_CONTEXT = $context;
+            #warn "HELLO! ($value)" . join ', ' => @cbs;
+            foreach my $cb (@cbs) {
+                #warn "Calling $cb with ($value)";
+                $cb->($value)
+            }
         });
     }
 

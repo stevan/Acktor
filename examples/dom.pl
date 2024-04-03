@@ -30,6 +30,7 @@ class Window :isa(Acktor) {
     }
 
     method ShowAcktorTree :Receive {
+        logger->log(INFO, 'Showing Acktor Tree' ) if INFO;
         logger->log(INFO, render_tree( $document->context ) ) if INFO;
     }
 
@@ -56,9 +57,23 @@ class Element :isa(Acktor) {
         }
     }
 
+    method ElementAdded;
+
+    method ElementFound;
+    method ElementNotFound;
+
     method AddElement :Receive ($props) {
         logger->log( INFO, "Adding Element($props)" ) if INFO;
-        spawn $props;
+        sender->send( event *Element::ElementAdded => spawn $props );
+    }
+
+    method FindElementById :Receive ($id) {
+        logger->log( INFO, "FindElementById($id)" ) if INFO;
+        if (my $el = context->lookup( $id )) {
+            sender->send( event *Element::ElementFound => $el );
+        } else {
+            sender->send( event *Element::ElementNotFound => $id );
+        }
     }
 
     method Render :Receive ($indent='') {
@@ -71,40 +86,65 @@ class Element :isa(Acktor) {
 
 sub init ($ctx) {
 
-    my $window = spawn Props[ Window:: ];
-
-    my $document = spawn Props[ Element::, (alias => '#root', id => 'root',
-        elements => [
-            Props[ Element:: => ( alias => '#foo', id => 'foo', cdata => 'Foo!!',
-                elements => [
-                    Props[ Element:: => ( alias => '#bar',   id => 'bar',   cdata => 'Bar!!',
-                        elements => [
-                            Props[ Element:: => ( alias => '#bork',    id => 'bork',    cdata => 'Bork!!'    ) ],
-                            Props[ Element:: => ( alias => '#borg',    id => 'borg',    cdata => 'Borg!!'    ) ],
-                            Props[ Element:: => ( alias => '#klingon', id => 'klingon', cdata => 'Klingon!!' ) ],
-                        ]
-                    )],
-                    Props[ Element:: => ( alias => '#baz',   id => 'baz',   cdata => 'Baz!!'   ) ],
-                    Props[ Element:: => ( alias => '#gorch', id => 'gorch', cdata => 'Gorch!!',
-                        elements => [
-                            Props[ Element:: => ( alias => '#bling', id => 'bling', cdata => 'Bling!!' ) ],
-                        ]
-                    )],
-                ]
-            )],
-        ]
-    )];
+    my $window   = spawn Props[ Window:: ];
+    my $document = spawn Props[ Element::, (alias => '#root', id => 'root' )];
 
     $window->send( event *Window::AttachDocument => $document );
-    $window->send( event *Window::ShowAcktorTree );
-    $window->send( event *Window::Refresh );
 
+    $document->ask( event *Element::AddElement =>
+        Props[ Element:: => ( alias => '#foo', id => 'foo', cdata => 'Foo!!' ) ]
+    )->then(sub ($e) {
+        my ($foo) = $e->payload->@*;
+        $foo->ask( event *Element::AddElement =>
+            Props[ Element:: => ( alias => '#bar', id => 'bar', cdata => 'Bar!!' ) ]
+        );
+    })->then(sub ($e) {
+        my ($bar) = $e->payload->@*;
+
+        $bar->ask( event *Element::AddElement =>
+            Props[ Element:: => ( alias => '#baz', id => 'baz', cdata => 'Baz!!' ) ],
+        );
+    })->then(sub ($e) {
+        $window->send( event *Window::ShowAcktorTree );
+        $window->send( event *Window::Refresh );
+    })->then(sub ($e) {
+        $document->ask( event *Element::FindElementById => '#bar' );
+    })->then(sub ($e) {
+        my ($bar) = $e->payload->@*;
+
+        $bar->ask( event *Element::AddElement =>
+            Props[ Element:: => ( alias => '#gorch', id => 'gorch', cdata => 'Gorch!!' ) ],
+        );
+    })->then(sub ($e) {
+        $window->send( event *Window::ShowAcktorTree );
+        $window->send( event *Window::Refresh );
+    })
 }
 
 my $system = Acktor::System->new;
 
 $system->run( init => \&init );
 
+
+__END__
+
+my $e = Props[ Element:: => ( alias => '#foo', id => 'foo', cdata => 'Foo!!',
+        elements => [
+            Props[ Element:: => ( alias => '#bar',   id => 'bar',   cdata => 'Bar!!',
+                elements => [
+                    Props[ Element:: => ( alias => '#bork',    id => 'bork',    cdata => 'Bork!!'    ) ],
+                    Props[ Element:: => ( alias => '#borg',    id => 'borg',    cdata => 'Borg!!'    ) ],
+                    Props[ Element:: => ( alias => '#klingon', id => 'klingon', cdata => 'Klingon!!' ) ],
+                ]
+            )],
+            Props[ Element:: => ( alias => '#baz',   id => 'baz',   cdata => 'Baz!!'   ) ],
+            Props[ Element:: => ( alias => '#gorch', id => 'gorch', cdata => 'Gorch!!',
+                elements => [
+                    Props[ Element:: => ( alias => '#bling', id => 'bling', cdata => 'Bling!!' ) ],
+                ]
+            )],
+        ]
+    )];
 
 
 

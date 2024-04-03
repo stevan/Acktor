@@ -80,6 +80,7 @@ class Acktor::Scheduler {
             logger->log( DEBUG, "tick =>> running callbacks( ".(join ', ' => (map "$_", @to_be_run))." )" ) if DEBUG;
 
             my @to_run = @to_be_run;
+            @to_be_run = ();
             # we need to be careful with running these
             # as they are arbitrary callbacks ...
             foreach my $f (@to_run) {
@@ -92,7 +93,6 @@ class Acktor::Scheduler {
                 }
             }
 
-            @to_be_run = ();
         }
 
         if ( keys %msg_buffer ) {

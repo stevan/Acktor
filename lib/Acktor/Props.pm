@@ -13,15 +13,16 @@ class Acktor::Props {
     field $alias :param = undef;
 
     method class { $class }
-    method alias { $alias }
+    method args  { $args  }
+
+    method alias :lvalue { $alias }
 
     method new_actor {
         return $class->new( $args ? %$args : () )
     }
 
-    field $_to_str;
     method to_string {
-        $_to_str //= sprintf 'Props[ %s ]' => $class;
+        sprintf 'Props[ %s ]%s' => $class, ($alias ? "( $alias )" : '');
     }
 }
 

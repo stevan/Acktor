@@ -27,8 +27,16 @@ class Acktor::Mailbox {
         $actor_ref->context->mailbox = $self;
 
         $queue  = \@messages;
-        $actor  = $actor_ref->props->new_actor;
         $status = RUNNING;
+
+        {
+            # FIXME: this should be here, but it needs to
+            # be here to allow use of context within the
+            # ADJUST block. If this is not here then it
+            # can inherit an incorrect context.
+            local $Acktor::Behaviors::CURRENT_CONTEXT = $actor_ref->context;
+            $actor = $actor_ref->props->new_actor;
+        }
     }
 
     method origin { $actor_ref->context->dispatcher->address }

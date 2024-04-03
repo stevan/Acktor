@@ -75,7 +75,7 @@ our $CURRENT_ACTOR;
 our $CURRENT_CONTEXT;
 our $CURRENT_MESSAGE;
 
-sub await ($symbol, $method) {
+sub await :prototype($$) ($symbol, $method) {
     $CURRENT_ACTOR // die 'Cannot call `await` outside of an active Acktor::Context';
 
     $CURRENT_ACTOR->become(
@@ -86,7 +86,7 @@ sub await ($symbol, $method) {
     );
 }
 
-sub Props ($props) {
+sub Props :prototype($) ($props) {
 
     my ($class, %args) = @$props;
 
@@ -106,22 +106,22 @@ sub logger ($ctx=undef) {
     Acktor::Logging::logger( $CURRENT_CONTEXT // $ctx )
 }
 
-sub spawn ($props) {
+sub spawn :prototype($) ($props) {
     my $c = $CURRENT_CONTEXT // die 'Cannot call `spawn` outside of an active Acktor::Context';
     $c->spawn( $props )
 }
 
-sub context {
+sub context :prototype() {
     $CURRENT_CONTEXT // die 'Cannot call `context` outside of an active Acktor::Context';
 }
 
-sub sender {
+sub sender :prototype() {
     # it must at least be defined ...
     my $m = $CURRENT_MESSAGE // die 'Cannot call `sender` outside of an active Acktor::Context';
     return $m->context->self;
 }
 
-sub event ($symbol, @payload) {
+sub event :prototype($;@) ($symbol, @payload) {
     my $c = $CURRENT_CONTEXT // die 'Cannot create an event outside of an active Acktor::Context';
     Acktor::Event->new(
         symbol  => $symbol,

@@ -11,8 +11,7 @@ class Acktor::Future::Ref {
     field $timeout    :param = undef;
     field $on_timeout :param = undef;
 
-    field $on_success :param;
-
+    field $future     :param;
     field $context    :param;
 
     field $pid;
@@ -46,7 +45,7 @@ class Acktor::Future::Ref {
             $on_timeout->() if $on_timeout;
             $timed_out = true;
         } else {
-            $on_success->( $event );
+            $future->resolve( $event );
             $timer->cancel if $timer;
         }
         # FIXME:

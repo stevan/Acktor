@@ -8,10 +8,12 @@ use Acktor::Mailbox;
 use Acktor::Ref;
 use Acktor::Context;
 use Acktor::Props;
+
 use Acktor::PostOffice;
 use Acktor::Remote::Ref;
+
+use Acktor::Future::Future;
 use Acktor::Future::Ref;
-use Acktor::Future::Promise;
 
 use Acktor::System::Init;
 
@@ -57,26 +59,26 @@ class Acktor::Dispatcher {
     }
 
     method spawn_future_ref ($to, $event) {
-        use Acktor::Future::Future;
+
         # FIXME:
         # this has to capture the current
         # context so that it can be used
         # in the callbacks
-        my $promise = Acktor::Future::Future->new(
+        my $future = Acktor::Future::Future->new(
             scheduler => $scheduler,
             context   => $Acktor::Behaviors::CURRENT_CONTEXT
         );
 
-        my $future = Acktor::Future::Ref->new(
+        my $future_ref = Acktor::Future::Ref->new(
             to         => $to,
             event      => $event,
+            future     => $future,
             context    => Acktor::Context->new(
                 dispatcher => $self,
             ),
-            on_success => sub ($e) { $promise->resolve( $e ) },
         );
 
-        return $promise;
+        return $future_ref;
     }
 
     method spawn_actor ($props) {

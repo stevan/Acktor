@@ -12,6 +12,33 @@ use Acktor::System;
 use Acktor::Behaviors;
 use Acktor::Logging;
 
+class Window :isa(Acktor) {
+    use Acktor::Logging;
+
+    field $document;
+
+    method AttachDocument :Receive ($d) {
+        $document = $d;
+    }
+
+    sub render_tree ($ctx, $indent='') {
+        my $tree = sprintf "%s+ %s\n" => $indent, $ctx->self;
+        foreach my $child ($ctx->all_children) {
+            $tree .= render_tree( $child->context, $indent.'  ' )
+        }
+        return $tree;
+    }
+
+    method ShowAcktorTree :Receive {
+        logger->log(INFO, render_tree( $document->context ) ) if INFO;
+    }
+
+    method Refresh :Receive {
+        logger->log(INFO, 'Refreshing Window' ) if INFO;
+        $document->send( event *Element::Render );
+    }
+}
+
 class Element :isa(Acktor) {
     use Acktor::Logging;
 
@@ -34,33 +61,29 @@ class Element :isa(Acktor) {
         spawn $props;
     }
 
-    sub render_tree ($ctx, $indent='') {
-        my $tree    = '';
-        my $current = $ctx->self;
-
-        $tree .= sprintf "%s+ %s\n" => $indent, $current;
-        foreach my $child ($ctx->all_children) {
-            $tree .= render_tree( $child->context, $indent.'  ' )
+    method Render :Receive ($indent='') {
+        logger->log( INFO, sprintf '%s> Element[%s](%s)' => $indent, $id, $cdata ) if INFO;
+        foreach my $e (context->all_children) {
+            $e->send( event *Render => $indent.'  ' );
         }
-
-        return $tree;
-    }
-
-    method Render :Receive {
-        logger->log(INFO, render_tree( context ) ) if INFO;
     }
 }
 
 sub init ($ctx) {
 
-    my $document = spawn Props[ Element::, (alias => '#root', id => 'root' ) ];
+    my $window = spawn Props[ Window:: ];
 
-    $document->send(
-        event *Element::AddElement => Props[
-            Element:: => (
-                alias => '#foo', id => 'foo', cdata => 'Foo!!',
+    my $document = spawn Props[ Element::, (alias => '#root', id => 'root',
+        elements => [
+            Props[ Element:: => ( alias => '#foo', id => 'foo', cdata => 'Foo!!',
                 elements => [
-                    Props[ Element:: => ( alias => '#bar',   id => 'bar',   cdata => 'Bar!!'   ) ],
+                    Props[ Element:: => ( alias => '#bar',   id => 'bar',   cdata => 'Bar!!',
+                        elements => [
+                            Props[ Element:: => ( alias => '#bork',    id => 'bork',    cdata => 'Bork!!'    ) ],
+                            Props[ Element:: => ( alias => '#borg',    id => 'borg',    cdata => 'Borg!!'    ) ],
+                            Props[ Element:: => ( alias => '#klingon', id => 'klingon', cdata => 'Klingon!!' ) ],
+                        ]
+                    )],
                     Props[ Element:: => ( alias => '#baz',   id => 'baz',   cdata => 'Baz!!'   ) ],
                     Props[ Element:: => ( alias => '#gorch', id => 'gorch', cdata => 'Gorch!!',
                         elements => [
@@ -68,11 +91,13 @@ sub init ($ctx) {
                         ]
                     )],
                 ]
-            )
+            )],
         ]
-    );
+    )];
 
-    $document->send( event *Element::Render );
+    $window->send( event *Window::AttachDocument => $document );
+    $window->send( event *Window::ShowAcktorTree );
+    $window->send( event *Window::Refresh );
 
 }
 

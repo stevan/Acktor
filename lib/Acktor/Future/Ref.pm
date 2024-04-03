@@ -42,13 +42,17 @@ class Acktor::Future::Ref {
 
     method send ($event) {
         if ( $event->symbol eq *Timeout ) {
+            # TODO: think about sending a cancel request to $to
             $on_timeout->() if $on_timeout;
             $timed_out = true;
         } else {
             $on_success->( $event );
             $timer->cancel if $timer;
         }
-        $context->stop( $self );
+        # FIXME:
+        # detach context and allow
+        # for destruction of this ref
+        # otherwise it just sticks around
     }
 }
 

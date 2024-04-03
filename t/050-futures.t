@@ -20,6 +20,7 @@ class Service :isa(Acktor) {
     use Acktor::Logging;
 
     method Response; # TODO : protocols
+    method Error;    # TODO : protocols
 
     method Request :Receive ($op, $x, $y) {
         logger->log( INFO, "Got Client request ... ($op, $x, $y)") if INFO;
@@ -39,11 +40,7 @@ sub init ($ctx) {
     my $Service = spawn Props[Service::];
     isa_ok($Service, 'Acktor::Ref');
 
-    # TODO - future here ...
-
-    my $promise = Acktor::Future::Promise->new( scheduler => $ctx->dispatcher->scheduler );
-
-    $Service->send( event *Service::Request => ( add => [ 2, 2 ], $promise ) );
+    my $promise = $Service->ask( event *Service::Request => ( add => 2, 2 ) );
 
     $promise->then(
         sub ($result) {
@@ -51,7 +48,7 @@ sub init ($ctx) {
             isa_ok($result, 'Acktor::Event');
             is($result->symbol, *Service::Response, '... got the expected result type');
             my ($val) = $result->payload->@*;
-            is($val, 4, '... got the expected result');
+            is($val, 4, '... got the expected result (4)');
         },
         sub ($error)  {
             logger($ctx)->log( INFO, "... promise rejected!" ) if INFO;

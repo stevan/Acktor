@@ -10,6 +10,8 @@ use Acktor::Context;
 use Acktor::Props;
 use Acktor::PostOffice;
 use Acktor::Remote::Ref;
+use Acktor::Future::Ref;
+use Acktor::Future::Promise;
 
 use Acktor::System::Init;
 
@@ -52,6 +54,21 @@ class Acktor::Dispatcher {
         );
 
         return $remote_ref;
+    }
+
+    method spawn_future_ref ($to, $event) {
+        my $promise = Acktor::Future::Promise->new( scheduler => $scheduler );
+
+        my $future = Acktor::Future::Ref->new(
+            to         => $to,
+            event      => $event,
+            context    => Acktor::Context->new(
+                dispatcher => $self,
+            ),
+            on_success => sub ($e) { $promise->resolve( $e ) },
+        );
+
+        return $promise;
     }
 
     method spawn_actor ($props) {

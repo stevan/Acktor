@@ -29,6 +29,10 @@ class Acktor::Ref {
         $context->send( $self, $event );
     }
 
+    method ask ($event) {
+        $context->ask( $self, $event );
+    }
+
     field $_to_str;
     method to_string {
         $_to_str //= sprintf 'Ref[ %s ]' => $self->pid;

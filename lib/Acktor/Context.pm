@@ -46,6 +46,11 @@ class Acktor::Context {
         $dispatcher->dispatch( $to, $event );
     }
 
+    method ask ($to, $event) {
+        logger->log( DEBUG, "$to <- ask( $event )" ) if DEBUG;
+        return $dispatcher->spawn_future_ref( $to, $event );
+    }
+
     method stop ($ref) {
         logger->log( DEBUG, "stop( $ref )" ) if DEBUG;
         $dispatcher->despawn_actor( $ref );

@@ -36,7 +36,7 @@ class Window :isa(Acktor) {
 
     method Refresh :Receive {
         logger->log(INFO, 'Refreshing Window' ) if INFO;
-        $document->send( event *Element::Render );
+        $document->send( event *Element::Refresh );
     }
 }
 
@@ -65,10 +65,10 @@ class Element :isa(Acktor) {
         }
     }
 
-    method Render :Receive ($indent='') {
+    method Refresh :Receive ($indent='') {
         logger->log( INFO, sprintf '%s> Element[%s](%s)' => $indent, $id, $cdata ) if INFO;
         foreach my $e (context->all_children) {
-            $e->send( event *Render => $indent.'  ' );
+            $e->send( event *Refresh => $indent.'  ' );
         }
     }
 }
@@ -95,6 +95,7 @@ sub init ($ctx) {
             )
         }
     )->then(sub ($) {
+        $window->send( event *Window::ShowAcktorTree );
         $document->ask( event *Element::FindElementById => '#foo' );
     })->when(
         *Element::ElementFound => sub ($bar) {
@@ -108,7 +109,7 @@ sub init ($ctx) {
     )->then(sub ($e) {
         $window->send( event *Window::ShowAcktorTree );
         $window->send( event *Window::Refresh );
-    })
+    });
 }
 
 my $system = Acktor::System->new;

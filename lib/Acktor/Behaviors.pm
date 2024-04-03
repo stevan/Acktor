@@ -12,6 +12,8 @@ use Acktor::Logging ();
 use Acktor::Behavior::Await;
 use Acktor::Behavior::Method;
 
+use Acktor::Future::Future;
+
 sub import {
     export_lexically(
         '&await'    => \&await,
@@ -21,6 +23,7 @@ sub import {
         '&sender'   => \&sender,
         '&logger'   => \&logger,
         '&Props'    => \&Props,
+        '&collect'  => \&collect
     );
 }
 
@@ -128,6 +131,35 @@ sub event :prototype($;@) ($symbol, @payload) {
         payload => \@payload,
         context => $c
     );
+}
+
+sub collect (@futures) {
+    my $c = $CURRENT_CONTEXT // die 'Cannot collect futures of an active Acktor::Context';
+
+    my $collector = Acktor::Future::Future->new(
+        context => $c
+    )->resolve([]);
+
+    foreach my $f ( @futures ) {
+        my @results;
+        $collector = $collector
+            ->then(sub ($result) {
+                #warn "hello from 1 for $p";
+                #warn Dumper { p => "$p", state => 1, collector => [ @results ], result => $result };
+                push @results => @$result;
+                #warn Dumper { p => "$p", state => 1.5, collector => [ @results ] };
+                $f;
+            })
+            ->then(sub ($result) {
+                #warn "hello from 2 for $p";
+                #warn Dumper { p => "$p", state => 2, collector => [ @results ], result => $result };
+                my $r = [ @results, $result ];
+                #warn Dumper { p => "$p", state => 2.5, collector => $r };
+                return $r;
+            });
+    }
+
+    return $collector;
 }
 
 

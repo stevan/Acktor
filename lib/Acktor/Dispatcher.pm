@@ -65,8 +65,7 @@ class Acktor::Dispatcher {
         # context so that it can be used
         # in the callbacks
         my $future = Acktor::Future::Future->new(
-            scheduler => $scheduler,
-            context   => $Acktor::Behaviors::CURRENT_CONTEXT
+            context => $Acktor::Behaviors::CURRENT_CONTEXT
         );
 
         my $future_ref = Acktor::Future::Ref->new(

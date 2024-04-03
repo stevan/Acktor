@@ -4,7 +4,6 @@ use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
 class Acktor::Future::Future {
-    field $scheduler :param;
     field $context   :param;
 
     field $result;
@@ -47,7 +46,7 @@ class Acktor::Future::Future {
     }
 
     method then ($handler) {
-        my $p = $self->new( scheduler => $scheduler, context => $context );
+        my $p = $self->new( context => $context );
         push @resolved => wrap( $p, $handler );
         $self->_notify unless $self->is_in_progress;
         $p;
@@ -84,7 +83,7 @@ class Acktor::Future::Future {
         @resolved = ();
 
         #warn "SCHEDULING $self";
-        $scheduler->schedule_callback(sub {
+        $context->dispatcher->scheduler->schedule_callback(sub {
             #warn "$self => STATUS: $status";
 
             # FIXME: this should be here, but it needs to
@@ -109,28 +108,4 @@ __END__
 
 =cut
 
-sub collect (@promises) {
-    my $collector = ELO::Core::Promise->new->resolve([]);
-
-    foreach my $p ( @promises ) {
-        my @results;
-        $collector = $collector
-            ->then(sub ($result) {
-                #warn "hello from 1 for $p";
-                #warn Dumper { p => "$p", state => 1, collector => [ @results ], result => $result };
-                push @results => @$result;
-                #warn Dumper { p => "$p", state => 1.5, collector => [ @results ] };
-                $p;
-            })
-            ->then(sub ($result) {
-                #warn "hello from 2 for $p";
-                #warn Dumper { p => "$p", state => 2, collector => [ @results ], result => $result };
-                my $r = [ @results, $result ];
-                #warn Dumper { p => "$p", state => 2.5, collector => $r };
-                return $r;
-            })
-    }
-
-    return $collector;
-}
 

@@ -78,7 +78,7 @@ class Acktor::Dispatcher {
             ),
         );
 
-        return $future_ref;
+        return $future;
     }
 
     method spawn_actor ($props) {

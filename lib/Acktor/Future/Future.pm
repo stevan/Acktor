@@ -8,12 +8,13 @@ class Acktor::Future::Future {
     field $context   :param;
 
     field $result;
+    field $resolved = false;
     field @resolved;
 
     method result { $result }
 
-    method is_in_progress { !  $result }
-    method is_resolved    { !! $result }
+    method is_in_progress { ! $resolved }
+    method is_resolved    {   $resolved }
 
     my sub wrap ($p, $then) {
         return sub ($value) {
@@ -55,7 +56,7 @@ class Acktor::Future::Future {
     method when (%handlers) {
         $self->then(sub ($e) {
             # XXX - catch errors ...
-            $handlers{ $e->symbol }->( $e->payload->@* )
+            return $handlers{ $e->symbol }->( $e->payload->@* )
         });
     }
 
@@ -63,6 +64,7 @@ class Acktor::Future::Future {
         #warn "resolve $self";
         $self->is_in_progress || die "Cannot resolve again, already resolved";
         $result = $_result;
+        $resolved = true;
         $self->_notify;
         $self;
     }
@@ -76,7 +78,7 @@ class Acktor::Future::Future {
             @cbs   = @resolved;
         }
         else {
-            die "Bad Notify State, not resolved";
+            die "Bad Notify State, not resolved ($self)";
         }
 
         @resolved = ();

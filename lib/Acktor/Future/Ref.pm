@@ -8,15 +8,10 @@ class Acktor::Future::Ref {
     field $to         :param;
     field $event      :param;
 
-    field $timeout    :param = undef;
-    field $on_timeout :param = undef;
-
     field $future     :param;
     field $context    :param;
 
     field $pid;
-    field $timer;
-    field $timed_out = false;
 
     my $FUTURE_SEQ = 0;
 
@@ -26,28 +21,13 @@ class Acktor::Future::Ref {
         $pid = sprintf '%04d:Future' => ++$FUTURE_SEQ;
 
         $to->send( $event->clone( $context ) );
-
-        if ($timeout) {
-            $timer = $context->schedule(
-                event => Acktor::Event->new( symbol => *Timeout, context => $context ),
-                for   => $self,
-                after => $timeout,
-            );
-        }
     }
 
     method pid     { $pid     }
     method context { $context }
 
     method send ($event) {
-        if ( $event->symbol eq *Timeout ) {
-            # TODO: think about sending a cancel request to $to
-            $on_timeout->() if $on_timeout;
-            $timed_out = true;
-        } else {
-            $future->resolve( $event );
-            $timer->cancel if $timer;
-        }
+        $future->resolve( $event );
         # FIXME:
         # detach context and allow
         # for destruction of this ref

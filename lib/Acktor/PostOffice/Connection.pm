@@ -23,7 +23,7 @@ class Acktor::PostOffice::Connection :isa(Acktor::PostOffice::ConnectionWatcher)
     method to_write ($data) {
         logger->log( DEBUG, "to_write called with ($data)" ) if DEBUG;
         $self->is_writing = true;
-        $writer->send_letters($data);
+        $writer->send_packets($data);
     }
 
     method handle_read ($post_office) {
@@ -33,10 +33,10 @@ class Acktor::PostOffice::Connection :isa(Acktor::PostOffice::ConnectionWatcher)
                 . $self->_peer_address) if DEBUG;
 
         if ($reader->read( $self->socket )) {
-            my @letters = $reader->fetch_letters;
-            logger->log( INFO, "Got (".(join ', ' => @letters).") on Connection from Peer" ) if INFO;
-            #$self->$on_letters(@letters);
-            $post_office->deliver_letters( @letters );
+            my @packets = $reader->fetch_packets;
+            logger->log( INFO, "Got (".(join ', ' => @packets).") on Connection from Peer" ) if INFO;
+            #$self->$on_letters(@packets);
+            $post_office->deliver_letters( @packets );
         }
 
         if ( my $error = $reader->get_error ) {

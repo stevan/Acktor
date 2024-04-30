@@ -13,16 +13,16 @@ class Acktor::IO::BufferedReader {
 
     field $buffer = '';
     field $error;
-    field @letters;
+    field @packets;
 
     method has_error { !! $error }
     method get_error {    $error }
 
-    method has_letters { !! @letters }
-    method fetch_letters {
-        my @msgs = @letters;
-        @letters = ();
-        @msgs;
+    method has_packets { !! @packets }
+    method fetch_packets {
+        my @p = @packets;
+        @packets = ();
+        @p;
     }
 
     my sub parse_buffer ($b) {
@@ -46,10 +46,10 @@ class Acktor::IO::BufferedReader {
 
             substr($b, 0, 1, ''); # clear colon
 
-            my $letter = substr($b, 0, $size, '');
-            #say "Letter($letter) : ($b)";
+            my $packet = substr($b, 0, $size, '');
+            #say "Letter($packet) : ($b)";
 
-            push @l => $letter;
+            push @l => $packet;
         }
         #say "LETTERS: ".join ', ' => @ls;
         return @l;
@@ -63,7 +63,7 @@ class Acktor::IO::BufferedReader {
         if (defined $bytes_read) {
             if ($bytes_read > 0) {
                 logger->log( DEBUG, "read bytes($bytes_read) into buffer($buffer)" ) if DEBUG;
-                push @letters => parse_buffer( $buffer );
+                push @packets => parse_buffer( $buffer );
             }
             else {
                 logger->log( DEBUG, "got EOF with buffer($buffer)" ) if DEBUG;
@@ -77,9 +77,9 @@ class Acktor::IO::BufferedReader {
         }
 
         # returns true if we
-        # have read letters
+        # have read packets
         # and false if not
-        return !! scalar @letters;
+        return !! scalar @packets;
     }
 
 }

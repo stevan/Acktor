@@ -34,13 +34,13 @@ class Acktor::IO::Watcher {
 
     method to_write ($data) {
         $self->is_writing = true;
-        $writer->send_letters($data);
+        $writer->send_packets($data);
     }
 
     method handle_read ($f) {
         if ($reader->read( $fh )) {
-            my @letters = $reader->fetch_letters;
-            $f->( @letters );
+            my @packets = $reader->fetch_packets;
+            $f->( @packets );
         }
 
         if ( my $error = $reader->get_error ) {

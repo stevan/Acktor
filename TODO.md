@@ -1,31 +1,3 @@
-
-- Port Promises from Stella
-
-- Implement Futures
-    - Future::Ref should hold a Promise
-        - when it gets the response, it calls resolve
-        - if it times out, it calls reject
-    - the Future function will connect the Future::Ref to the Promise
-        - and return the Promise for then-ing
-
-```perl
-
-my $f = Future(
-    to         => $foo,
-    event      => event( *Foo::BarRequest ),
-    timeout    => 5,
-);
-
-$f->then(method ($e) {
-    ...
-});
-
-
-```
-
-
-
-
 <!---------------------------------------------------------------------------->
 # TODO
 <!---------------------------------------------------------------------------->

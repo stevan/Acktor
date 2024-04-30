@@ -5,7 +5,7 @@ use experimental qw[ class builtin try ];
 use builtin      qw[ blessed refaddr true false ];
 
 use Data::Dumper;
-use Time::HiRes 'time';
+use Test::More;
 
 use Acktor;
 use Acktor::System;
@@ -21,7 +21,7 @@ class Window :isa(Acktor) {
         $document = $d;
     }
 
-    my sub render_tree ($ctx, $indent='') {
+    my sub render_acktor_tree ($ctx, $indent='') {
         my $tree = sprintf "%s+ %s\n" => $indent, $ctx->self;
         foreach my $child ($ctx->all_children) {
             $tree .= __SUB__->( $child->context, $indent.'  ' )
@@ -31,7 +31,7 @@ class Window :isa(Acktor) {
 
     method ShowAcktorTree :Receive {
         logger->log(INFO, 'Showing Acktor Tree' ) if INFO;
-        logger->log(INFO, render_tree( $document->context ) ) if INFO;
+        logger->log(INFO, render_acktor_tree( $document->context ) ) if INFO;
     }
 
     method Refresh :Receive {
@@ -106,16 +106,19 @@ sub init ($ctx) {
         *Element::ElementNotFound => sub ($id) {
             logger->log( WARN, "Could not find Element with ID($id)" ) if WARN;
         }
-    )->then(sub ($e) {
+    )->then(sub ($) {
         $window->send( event *Window::ShowAcktorTree );
         $window->send( event *Window::Refresh );
     });
 }
 
 my $system = Acktor::System->new;
+isa_ok($system, 'Acktor::System');
 
 $system->run( init => \&init );
 
+
+done_testing;
 
 __END__
 
